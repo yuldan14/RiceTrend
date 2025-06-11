@@ -1,5 +1,4 @@
 import Dashboard from "@/components/Dashboard";
-import Perbandingan from "@/components/Perbandingan";
 import Sidebar from "@/components/Sidebar";
 
 export default function Home() {
@@ -11,13 +10,7 @@ export default function Home() {
       </div>
 
       {/* Konten utama dengan margin kiri agar tidak ketindih */}
-      <div className="ml-64">
-        <Dashboard />
-      </div>
-
-      <div className="ml-64 ">
-        <Perbandingan/>
-      </div>
+      
     </div>
   );
 }

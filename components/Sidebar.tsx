@@ -35,23 +35,23 @@ const menuItems = [
       </svg>
     ),
   },
-  {
-    label: "Analisis",
-    href: "/analisis",
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-      >
-        <path
-          fill="#7c7c7c"
-          d="M3.5 18.5L2 17l7.5-7.5l4 4l7.1-8L22 6.9l-8.5 9.6l-4-4z"
-        />
-      </svg>
-    ),
-  },
+  // {
+  //   label: "Analisis",
+  //   href: "/analisis",
+  //   icon: (
+  //     <svg
+  //       xmlns="http://www.w3.org/2000/svg"
+  //       width="24"
+  //       height="24"
+  //       viewBox="0 0 24 24"
+  //     >
+  //       <path
+  //         fill="#7c7c7c"
+  //         d="M3.5 18.5L2 17l7.5-7.5l4 4l7.1-8L22 6.9l-8.5 9.6l-4-4z"
+  //       />
+  //     </svg>
+  //   ),
+  // },
   {
     label: "Data Historis",
     href: "/data-historis",
