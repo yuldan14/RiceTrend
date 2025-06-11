@@ -1,7 +1,7 @@
 // beras-frontend/components/Prediksi.tsx
 'use client'; 
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react"; // Impor useCallback
 import NewYearPred from "./NewYearPred"; 
 import IdulFitriPred from "./IdulFitriPred"; 
 import PriceChart from "./PriceChart"; 
@@ -44,98 +44,97 @@ const Prediksi = () => {
   const [chartPredictionIdulFitriSeries, setChartPredictionIdulFitriSeries] = useState<number[] | null>(null);
 
   // --- Efek samping: Mengambil Data Historis Lokal dari public/data_harga.json ---
-  useEffect(() => {
-    const fetchLocalHistoricalData = async () => {
-      try {
-        const res = await fetch('/data_harga.json');
-        if (!res.ok) {
-            throw new Error('Gagal memuat data historis lokal.');
-        }
-
-        const dataArray: HistoricalPriceData[] = await res.json();
-        setAllHistoricalDataLocal(dataArray); // Simpan semua data historis untuk grafik
-
-        if (dataArray.length > 0) {
-          const latestData = dataArray[dataArray.length - 1];
-          setHargaHariIni({
-            medium_silinda: latestData.medium_silinda,
-            premium_silinda: latestData.premium_silinda,
-            medium_bapanas: latestData.medium_bapanas,
-            premium_bapanas: latestData.premium_bapanas,
-          });
-        } else {
-            setErrorHistorical('Data historis lokal kosong.');
-        }
-      } catch (err: unknown) { // Menggunakan 'unknown' untuk tipe error yang lebih aman
-        console.error('Error fetching local historical prices:', err);
-        if (err instanceof Error) {
-            setErrorHistorical(`Gagal memuat harga terkini dari lokal: ${err.message}`);
-        } else {
-            setErrorHistorical('Gagal memuat harga terkini dari lokal: Terjadi kesalahan tidak diketahui.');
-        }
-      } finally {
-        setLoadingHistorical(false);
+  const fetchLocalHistoricalData = useCallback(async () => { // Gunakan useCallback
+    try {
+      const res = await fetch('/data_harga.json');
+      if (!res.ok) {
+          throw new Error('Gagal memuat data historis lokal.');
       }
-    };
 
+      const dataArray: HistoricalPriceData[] = await res.json();
+      setAllHistoricalDataLocal(dataArray);
+
+      if (dataArray.length > 0) {
+        const latestData = dataArray[dataArray.length - 1];
+        setHargaHariIni({
+          medium_silinda: latestData.medium_silinda,
+          premium_silinda: latestData.premium_silinda,
+          medium_bapanas: latestData.medium_bapanas,
+          premium_bapanas: latestData.premium_bapanas,
+        });
+      } else {
+          setErrorHistorical('Data historis lokal kosong.');
+      }
+    } catch (err: unknown) {
+      console.error('Error fetching local historical prices:', err);
+      if (err instanceof Error) {
+          setErrorHistorical(`Gagal memuat harga terkini dari lokal: ${err.message}`);
+      } else {
+          setErrorHistorical('Gagal memuat harga terkini dari lokal: Terjadi kesalahan tidak diketahui.');
+      }
+    } finally {
+      setLoadingHistorical(false);
+    }
+  }, []); // Dependensi kosong karena tidak bergantung pada props/state
+
+  useEffect(() => {
     fetchLocalHistoricalData();
-  }, []); 
+  }, [fetchLocalHistoricalData]); // Tambahkan fetchLocalHistoricalData sebagai dependensi
 
   // --- Efek samping: Mengambil Prediksi Harga Besok dari utils/api (dari JSON lokal) ---
-  useEffect(() => {
-    const fetchPredictionTomorrow = async () => {
-      if (!jenisBeras || Object.keys(hargaHariIni).length === 0) {
-        setPrediksiBesokSeries(null); // Reset deret
-        setErrorPrediksiBesok('Pilih jenis beras dan tunggu data harga lokal dimuat.');
-        return;
-      }
+  const fetchPredictionTomorrow = useCallback(async () => { // Gunakan useCallback
+    if (!jenisBeras || Object.keys(hargaHariIni).length === 0) {
+      setPrediksiBesokSeries(null);
+      setErrorPrediksiBesok('Pilih jenis beras dan tunggu data harga lokal dimuat.');
+      return;
+    }
 
-      setLoadingPrediksiBesok(true);
-      setErrorPrediksiBesok('');
-      setPrediksiBesokSeries(null); // Reset deret
+    setLoadingPrediksiBesok(true);
+    setErrorPrediksiBesok('');
+    setPrediksiBesokSeries(null);
 
-      try {
-        let predictionResult: number[] = [];
-        const stepsAhead = 1; // Untuk prediksi harga besok (1 hari ke depan)
+    try {
+      let predictionResult: number[] = [];
+      const stepsAhead = 1; 
 
-        const api = await import('../utils/api'); // Dynamic import untuk menghindari circular dependency
-        switch (jenisBeras) {
-          case 'medium_silinda':
-            predictionResult =
-              model === 'ARIMA'
-                ? await api.predictMediumSilindaArima(stepsAhead)
-                : await api.predictMediumSilindaLstm(stepsAhead);
-            break;
-          case 'premium_silinda':
-            predictionResult =
-              model === 'ARIMA'
-                ? await api.predictPremiumSilindaArima(stepsAhead)
-                : await api.predictPremiumSilindaLstm(stepsAhead);
-            break;
-          case 'medium_bapanas':
-            predictionResult =
-              model === 'ARIMA'
-                ? await api.predictMediumBapanasArima(stepsAhead)
-                : await api.predictMediumBapanasLstm(stepsAhead);
-            break;
-          case 'premium_bapanas':
-            predictionResult =
-              model === 'ARIMA'
-                ? await api.predictPremiumBapanasArima(stepsAhead)
-                : await api.predictPremiumBapanasLstm(stepsAhead);
-            break;
-          default:
-            setErrorPrediksiBesok('Jenis beras tidak valid.');
-            setLoadingPrediksiBesok(false);
-            return;
+      const api = await import('../utils/api'); 
+      switch (jenisBeras) {
+        case 'medium_silinda':
+          predictionResult =
+            model === 'ARIMA'
+              ? await api.predictMediumSilindaArima(stepsAhead)
+              : await api.predictMediumSilindaLstm(stepsAhead);
+          break;
+        case 'premium_silinda':
+          predictionResult =
+            model === 'ARIMA'
+              ? await api.predictPremiumSilindaArima(stepsAhead)
+              : await api.predictPremiumSilindaLstm(stepsAhead);
+          break;
+        case 'medium_bapanas':
+          predictionResult =
+            model === 'ARIMA'
+              ? await api.predictMediumBapanasArima(stepsAhead)
+              : await api.predictMediumBapanasLstm(stepsAhead);
+          break;
+        case 'premium_bapanas':
+          predictionResult =
+            model === 'ARIMA'
+              ? await api.predictPremiumBapanasArima(stepsAhead)
+              : await api.predictPremiumBapanasLstm(stepsAhead);
+          break;
+        default:
+          setErrorPrediksiBesok('Jenis beras tidak valid.');
+          setLoadingPrediksiBesok(false);
+          return;
         }
 
         if (predictionResult.length > 0) {
-          setPrediksiBesokSeries(predictionResult); // Simpan seluruh deret prediksi besok
+          setPrediksiBesokSeries(predictionResult); 
         } else {
           setErrorPrediksiBesok('API tidak mengembalikan hasil prediksi.');
         }
-      } catch (err: unknown) { // Menggunakan 'unknown'
+      } catch (err: unknown) {
         console.error('Error fetching tomorrow prediction:', err);
         if (err instanceof Error) {
             setErrorPrediksiBesok(`Gagal mengambil prediksi besok: ${err.message}`);
@@ -145,20 +144,21 @@ const Prediksi = () => {
       } finally {
         setLoadingPrediksiBesok(false);
       }
-    };
+    }, [jenisBeras, model, hargaHariIni]); // Dependensi
 
+  useEffect(() => {
     if (jenisBeras && Object.keys(hargaHariIni).length > 0) {
         fetchPredictionTomorrow();
     } else {
         setPrediksiBesokSeries(null); 
         setErrorPrediksiBesok('');
     }
-  }, [jenisBeras, model, hargaHariIni]); 
+  }, [jenisBeras, hargaHariIni, fetchPredictionTomorrow]); 
 
   // --- Fungsi: Hitung Persentase Perubahan Harga Besok ---
   const hitungPersentasePerubahanBesok = () => {
     const prediksiAkhirBesok = prediksiBesokSeries && prediksiBesokSeries.length > 0
-      ? prediksiBesokSeries[0] // Prediksi besok adalah indeks 0
+      ? prediksiBesokSeries[0] 
       : null;
 
     if (
@@ -178,13 +178,12 @@ const Prediksi = () => {
   const isNaikBesok = persentaseBesok !== null && Number(persentaseBesok) > 0;
   const isTurunBesok = persentaseBesok !== null && Number(persentaseBesok) < 0;
 
-  // Nilai prediksi besok yang ditampilkan di kotak adalah prediksi pertama dari deret
   const displayPrediksiBesok = prediksiBesokSeries && prediksiBesokSeries.length > 0
-    ? prediksiBesokSeries[0] // Ambil prediksi untuk hari pertama (besok)
+    ? prediksiBesokSeries[0] 
     : null;
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-10"> 
+    <div className="min-h-screen bg-gray-50 pb-10">
       {/* Title Bar Aplikasi (sticky di bagian atas) */}
       <div className="shadow-md h-15 bg-white sticky top-0 z-10 flex items-center">
         <span className="h-full w-full flex items-center font-sans font-bold text-lg text-gray-900 ml-5 py-4">
@@ -348,7 +347,7 @@ const Prediksi = () => {
 
             {/* Pesan jika pengguna belum memilih periode khusus */}
             {jenisBeras && !periodePrediksi && (
-              <p className="text-gray-500 text-center">Pilih periode prediksi seperti &#34;Idul Fitri&#34; atau &#34;Tahun Baru&#34; untuk melihat prediksi spesifik.</p> {/* Perbaikan: Escape kutip */}
+              <p className="text-gray-500 text-center">Pilih periode prediksi seperti &#34;Idul Fitri&#34; atau &#34;Tahun Baru&#34; untuk melihat prediksi spesifik.</p> 
             )}
             
             {/* Visualisasi Grafis di Paling Bawah */}
