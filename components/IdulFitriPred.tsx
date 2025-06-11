@@ -1,17 +1,7 @@
 // beras-frontend/components/IdulFitriPred.tsx
 'use client'; 
 import React, { useState, useEffect, useCallback } from 'react'; // Impor useCallback
-import {
-  predictMediumSilindaArima,
-  predictMediumSilindaLstm,
-  predictPremiumSilindaArima,
-  predictPremiumSilindaLstm,
-  predictMediumBapanasArima,
-  predictMediumBapanasLstm,
-  predictPremiumBapanasArima,
-  predictPremiumBapanasLstm,
-} from '../utils/api'; 
-import { format, parseISO } from 'date-fns'; // Hapus `addDays` dari impor
+
 
 type HargaData = {
   [key: string]: number | undefined;

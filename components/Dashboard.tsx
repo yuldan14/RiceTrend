@@ -1,16 +1,7 @@
 // beras-frontend/components/Dashboard.tsx
 'use client';
 import React, { useState, useEffect } from 'react';
-import {
-  predictMediumSilindaArima,
-  predictMediumSilindaLstm,
-  predictPremiumSilindaArima,
-  predictPremiumSilindaLstm,
-  predictMediumBapanasArima,
-  predictMediumBapanasLstm,
-  predictPremiumBapanasArima,
-  predictPremiumBapanasLstm,
-} from '../utils/api';
+
 import NewYearPred from './NewYearPred'; // Komponen contoh lainnya
 
 // --- Interfaces ---

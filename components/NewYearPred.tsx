@@ -1,18 +1,7 @@
 // beras-frontend/components/NewYearPred.tsx
 'use client'; 
 import React, { useState, useEffect, useCallback } from 'react'; // Impor useCallback
-import {
-  predictMediumSilindaArima,
-  predictMediumSilindaLstm,
-  predictPremiumSilindaArima,
-  predictPremiumSilindaLstm,
-  predictMediumBapanasArima,
-  predictMediumBapanasLstm,
-  predictPremiumBapanasArima,
-  predictPremiumBapanasLstm,
-} from '../utils/api'; 
-// Hapus `format`, `parseISO`, `addDays` karena tidak digunakan langsung di sini
-// import { format, parseISO, addDays } from 'date-fns'; 
+
 
 
 type HargaData = {
