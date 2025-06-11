@@ -1,4 +1,3 @@
-import Dashboard from "@/components/Dashboard";
 import Prediksi from "@/components/Prediksi";
 import Sidebar from "@/components/Sidebar";
 

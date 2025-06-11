@@ -12,14 +12,13 @@ import {
   predictPremiumBapanasLstm,
 } from '../utils/api';
 import NewYearPred from './NewYearPred'; // Komponen contoh lainnya
-import IdulFitriPred from './IdulFitriPred';
 
 // --- Interfaces ---
 type HargaData = {
   [key: string]: number | undefined;
 };
 
-// Interface untuk data historis dari public/data_harga.json (hanya untuk harga hari ini/kemarin)
+// Interface untuk data historis dari public/data_harga.json
 interface HistoricalPriceData {
   id: number;
   date: string;
@@ -37,11 +36,10 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [hargaHariIni, setHargaHariIni] = useState<HargaData>({});
-  const [hargaKemarin, setHargaKemarin] = useState<HargaData>({});
-  // `allHistoricalData` hanya untuk mengambil harga hari ini/kemarin dari file lokal
-  const [allHistoricalDataLocal, setAllHistoricalDataLocal] = useState<HistoricalPriceData[]>([]);
+  // const [hargaKemarin, setHargaKemarin] = useState<HargaData>({}); // DIHAPUS: tidak digunakan
+  // const [allHistoricalDataLocal, setAllHistoricalDataLocal] = useState<HistoricalPriceData[]>([]); // DIHAPUS: tidak digunakan langsung
 
-  // --- Efek: Mengambil Data Historis Lokal (untuk harga Hari Ini & Kemarin) ---
+  // --- Efek: Mengambil Data Historis Lokal (untuk harga Hari Ini) ---
   useEffect(() => {
     const fetchLocalHistoricalData = async () => {
       try {
@@ -51,11 +49,11 @@ const Dashboard = () => {
         }
 
         const dataArray: HistoricalPriceData[] = await res.json();
-        setAllHistoricalDataLocal(dataArray); // Simpan semua data historis lokal
+        // setAllHistoricalDataLocal(dataArray); // Tidak perlu set state jika tidak digunakan langsung
 
-        if (dataArray.length >= 2) {
+        if (dataArray.length > 0) { // Cukup 1 entri untuk harga hari ini
           const latestData = dataArray[dataArray.length - 1];
-          const yesterdayData = dataArray[dataArray.length - 2];
+          // const yesterdayData = dataArray.length >= 2 ? dataArray[dataArray.length - 2] : null; // Tidak digunakan lagi
 
           setHargaHariIni({
             medium_silinda: latestData.medium_silinda,
@@ -64,18 +62,18 @@ const Dashboard = () => {
             premium_bapanas: latestData.premium_bapanas,
           });
 
-          setHargaKemarin({
-            medium_silinda: yesterdayData.medium_silinda,
-            premium_silinda: yesterdayData.premium_silinda,
-            medium_bapanas: yesterdayData.medium_bapanas,
-            premium_bapanas: yesterdayData.premium_bapanas,
-          });
+          // setHargaKemarin(yesterdayData ? { /* ...data kemarin */ } : {}); // Tidak digunakan lagi
         } else {
-            setError('Data historis lokal tidak cukup untuk harga hari ini dan kemarin.');
+            setError('Data historis lokal tidak cukup.');
         }
-      } catch (err: any) {
+      } catch (err: unknown) { // Menggunakan 'unknown' untuk tipe error yang lebih aman
         console.error('Error fetching local historical prices:', err);
-        setError(`Gagal memuat harga terkini dari lokal: ${err.message || 'Terjadi kesalahan.'}`);
+        // Type guard untuk memastikan err adalah Error
+        if (err instanceof Error) {
+            setError(`Gagal memuat harga terkini dari lokal: ${err.message}`);
+        } else {
+            setError('Gagal memuat harga terkini dari lokal: Terjadi kesalahan tidak diketahui.');
+        }
       }
     };
 
@@ -83,7 +81,6 @@ const Dashboard = () => {
   }, []);
 
   // --- Efek: Mengambil Prediksi dari Backend ---
-  // Dipicu oleh perubahan jenisBeras, model, atau setelah data historis lokal untuk UI dimuat.
   useEffect(() => {
     const fetchPrediction = async () => {
       // Tunggu hingga jenisBeras dipilih dan harga hari ini tersedia (dari data lokal)
@@ -101,31 +98,34 @@ const Dashboard = () => {
         let predictionResult: number[] = [];
         const stepsAhead = 1; // Untuk prediksi harga besok
 
+        // Menggunakan import dinamis untuk menghindari circular dependency jika ada
+        const api = await import('../utils/api'); 
+
         // Panggil fungsi API yang sesuai, tanpa meneruskan `last_values`
         switch (jenisBeras) {
           case 'medium_silinda':
             predictionResult =
               model === 'ARIMA'
-                ? await predictMediumSilindaArima(stepsAhead)
-                : await predictMediumSilindaLstm(stepsAhead);
+                ? await api.predictMediumSilindaArima(stepsAhead)
+                : await api.predictMediumSilindaLstm(stepsAhead);
             break;
           case 'premium_silinda':
             predictionResult =
               model === 'ARIMA'
-                ? await predictPremiumSilindaArima(stepsAhead)
-                : await predictPremiumSilindaLstm(stepsAhead);
+                ? await api.predictPremiumSilindaArima(stepsAhead)
+                : await api.predictPremiumSilindaLstm(stepsAhead);
             break;
           case 'medium_bapanas':
             predictionResult =
               model === 'ARIMA'
-                ? await predictMediumBapanasArima(stepsAhead)
-                : await predictMediumBapanasLstm(stepsAhead);
+                ? await api.predictMediumBapanasArima(stepsAhead)
+                : await api.predictMediumBapanasLstm(stepsAhead);
             break;
           case 'premium_bapanas':
             predictionResult =
               model === 'ARIMA'
-                ? await predictPremiumBapanasArima(stepsAhead)
-                : await predictPremiumBapanasLstm(stepsAhead);
+                ? await api.predictPremiumBapanasArima(stepsAhead)
+                : await api.predictPremiumBapanasLstm(stepsAhead);
             break;
           default:
             setError('Jenis beras tidak valid.');
@@ -138,9 +138,13 @@ const Dashboard = () => {
         } else {
           setError('API tidak mengembalikan hasil prediksi.');
         }
-      } catch (err: any) {
+      } catch (err: unknown) { // Menggunakan 'unknown' untuk tipe error yang lebih aman
         console.error('Error fetching prediction:', err);
-        setError(`Gagal mengambil prediksi: ${err.message || 'Terjadi kesalahan tidak diketahui.'}`);
+        if (err instanceof Error) {
+            setError(`Gagal mengambil prediksi: ${err.message}`);
+        } else {
+            setError('Gagal mengambil prediksi: Terjadi kesalahan tidak diketahui.');
+        }
       } finally {
         setLoading(false);
       }
@@ -280,11 +284,6 @@ const Dashboard = () => {
 
         {/* Prediksi Untuk Tanggal Tahun Baru - Menggunakan Komponen Terpisah */}
         <NewYearPred
-          jenisBeras={jenisBeras}
-          model={model}
-          hargaHariIni={hargaHariIni}
-        />
-        <IdulFitriPred
           jenisBeras={jenisBeras}
           model={model}
           hargaHariIni={hargaHariIni}

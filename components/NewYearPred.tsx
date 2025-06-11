@@ -1,6 +1,6 @@
 // beras-frontend/components/NewYearPred.tsx
 'use client'; 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react'; // Impor useCallback
 import {
   predictMediumSilindaArima,
   predictMediumSilindaLstm,
@@ -11,7 +11,8 @@ import {
   predictPremiumBapanasArima,
   predictPremiumBapanasLstm,
 } from '../utils/api'; 
-import { format, parseISO, addDays } from 'date-fns'; // Impor date-fns untuk membantu tanggal
+// Hapus `format`, `parseISO`, `addDays` karena tidak digunakan langsung di sini
+// import { format, parseISO, addDays } from 'date-fns'; 
 
 
 type HargaData = {
@@ -22,7 +23,6 @@ interface NewYearPredProps {
   jenisBeras: keyof HargaData;
   model: 'ARIMA' | 'LSTM';
   hargaHariIni: HargaData;
-  // Ubah tipe onPredictionResult untuk mengirim array prediksi, bukan hanya satu angka
   onPredictionResult?: (predictions: number[] | null) => void; 
 }
 
@@ -32,13 +32,13 @@ const NewYearPred: React.FC<NewYearPredProps> = ({
   hargaHariIni,
   onPredictionResult,
 }) => {
-  // Ubah state ini untuk menyimpan seluruh deret prediksi
   const [prediksiTahunBaruSeries, setPrediksiTahunBaruSeries] = useState<number[] | null>(null);
   const [loadingTahunBaru, setLoadingTahunBaru] = useState(false);
   const [errorTahunBaru, setErrorTahunBaru] = useState('');
 
   // Fungsi untuk menghitung berapa hari lagi menuju Tahun Baru berikutnya.
-  const hitungHariKeTahunBaru = () => {
+  // Dibungkus dengan useCallback karena digunakan di dalam useEffect.
+  const hitungHariKeTahunBaru = useCallback(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0); 
     let newYearDate = new Date(today.getFullYear() + 1, 0, 1); 
@@ -51,75 +51,90 @@ const NewYearPred: React.FC<NewYearPredProps> = ({
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
     return diffDays;
-  };
+  }, []); // Dependensi kosong karena tidak bergantung pada props/state
 
   // Fungsi untuk mengambil prediksi Tahun Baru dari API (sekarang dari JSON lokal).
-  useEffect(() => {
-    const fetchPredictionTahunBaru = async () => {
-      if (!jenisBeras) {
-        setPrediksiTahunBaruSeries(null);
-        setErrorTahunBaru('Pilih jenis beras untuk melihat prediksi.');
-        if (onPredictionResult) onPredictionResult(null); 
-        setLoadingTahunBaru(false);
-        return;
-      }
-
-      setLoadingTahunBaru(true);
-      setErrorTahunBaru('');
-      setPrediksiTahunBaruSeries(null); // Reset deret
+  // Dibungkus dengan useCallback karena digunakan di dalam useEffect dan bergantung pada jenisBeras, model, hitungHariKeTahunBaru, onPredictionResult.
+  const fetchPredictionTahunBaru = useCallback(async () => {
+    if (!jenisBeras) {
+      setPrediksiTahunBaruSeries(null);
+      setErrorTahunBaru('Pilih jenis beras untuk melihat prediksi.');
       if (onPredictionResult) onPredictionResult(null); 
+      setLoadingTahunBaru(false);
+      return;
+    }
 
-      try {
-        const stepsToNewYear = hitungHariKeTahunBaru();
-        let predictionResult: number[] = [];
+    setLoadingTahunBaru(true);
+    setErrorTahunBaru('');
+    setPrediksiTahunBaruSeries(null); 
+    if (onPredictionResult) onPredictionResult(null); 
 
-        switch (jenisBeras) {
-          case 'medium_silinda':
-            predictionResult =
-              model === 'ARIMA'
-                ? await predictMediumSilindaArima(stepsToNewYear)
-                : await predictMediumSilindaLstm(stepsToNewYear);
-            break;
-          case 'premium_silinda':
-            predictionResult =
-              model === 'ARIMA'
-                ? await predictPremiumSilindaArima(stepsToNewYear)
-                : await predictPremiumSilindaLstm(stepsToNewYear);
-            break;
-          case 'medium_bapanas':
-            predictionResult =
-              model === 'ARIMA'
-                ? await predictMediumBapanasArima(stepsToNewYear)
-                : await predictMediumBapanasLstm(stepsToNewYear);
-            break;
-          case 'premium_bapanas':
-            predictionResult =
-              model === 'ARIMA'
-                ? await predictPremiumBapanasArima(stepsToNewYear)
-                : await predictPremiumBapanasLstm(stepsToNewYear);
-            break;
-          default:
-            throw new Error('Jenis beras tidak valid.');
-        }
+    try {
+      const stepsToNewYear = hitungHariKeTahunBaru();
+      let predictionResult: number[] = [];
 
-        if (predictionResult.length > 0) {
-          setPrediksiTahunBaruSeries(predictionResult); // Simpan seluruh deret
-          if (onPredictionResult) onPredictionResult(predictionResult); // Kirim seluruh deret ke parent
-        } else {
-          setErrorTahunBaru('API tidak mengembalikan hasil prediksi.');
-          if (onPredictionResult) onPredictionResult(null);
-        }
-      } catch (err: any) {
-        console.error('Error fetching new year prediction:', err);
-        setErrorTahunBaru(`Gagal mengambil prediksi tahun baru: ${err.message || 'Terjadi kesalahan tidak diketahui.'}`);
-        if (onPredictionResult) onPredictionResult(null);
-      } finally {
-        setLoadingTahunBaru(false);
+      // Menggunakan import dinamis untuk menghindari circular dependency
+      const api = await import('../utils/api'); 
+
+      switch (jenisBeras) {
+        case 'medium_silinda':
+          predictionResult =
+            model === 'ARIMA'
+              ? await api.predictMediumSilindaArima(stepsToNewYear)
+              : await api.predictMediumSilindaLstm(stepsToNewYear);
+          break;
+        case 'premium_silinda':
+          predictionResult =
+            model === 'ARIMA'
+              ? await api.predictPremiumSilindaArima(stepsToNewYear)
+              : await api.predictPremiumSilindaLstm(stepsToNewYear);
+          break;
+        case 'medium_bapanas':
+          predictionResult =
+            model === 'ARIMA'
+              ? await api.predictMediumBapanasArima(stepsToNewYear)
+              : await api.predictMediumBapanasLstm(stepsToNewYear);
+          break;
+        case 'premium_bapanas':
+          predictionResult =
+            model === 'ARIMA'
+              ? await api.predictPremiumBapanasArima(stepsToNewYear)
+              : await api.predictPremiumBapanasLstm(stepsToNewYear);
+          break;
+        default:
+          throw new Error('Jenis beras tidak valid.');
       }
-    };
 
-    fetchPredictionTahunBaru();
-  }, [jenisBeras, model]); 
+      if (predictionResult.length > 0) {
+        setPrediksiTahunBaruSeries(predictionResult); 
+        if (onPredictionResult) onPredictionResult(predictionResult); 
+      } else {
+        setErrorTahunBaru('API tidak mengembalikan hasil prediksi.');
+        if (onPredictionResult) onPredictionResult(null);
+      }
+    } catch (err: unknown) { // Menggunakan 'unknown' untuk tipe error yang lebih aman
+      console.error('Error fetching new year prediction:', err);
+      if (err instanceof Error) {
+          setErrorTahunBaru(`Gagal mengambil prediksi tahun baru: ${err.message}`);
+      } else {
+          setErrorTahunBaru('Gagal mengambil prediksi tahun baru: Terjadi kesalahan tidak diketahui.');
+      }
+      if (onPredictionResult) onPredictionResult(null);
+    } finally {
+      setLoadingTahunBaru(false);
+    }
+  }, [jenisBeras, model, hitungHariKeTahunBaru, onPredictionResult]); // Tambahkan semua dependensi
+
+  // Efek samping untuk memicu pengambilan prediksi setiap kali jenis beras atau model berubah.
+  useEffect(() => {
+    if (jenisBeras) {
+      fetchPredictionTahunBaru();
+    } else {
+      setPrediksiTahunBaruSeries(null);
+      setErrorTahunBaru('Pilih jenis beras.');
+      if (onPredictionResult) onPredictionResult(null);
+    }
+  }, [jenisBeras, fetchPredictionTahunBaru, onPredictionResult]); // Tambahkan dependensi
 
   // Fungsi untuk menghitung persentase perubahan harga (menggunakan nilai terakhir dari deret prediksi)
   const hitungPersentasePerubahanTahunBaru = () => {

@@ -6,7 +6,6 @@ import NewYearPred from "./NewYearPred";
 import IdulFitriPred from "./IdulFitriPred"; 
 import PriceChart from "./PriceChart"; 
 // Tidak perlu mengimpor predict... dari '../utils/api' di sini karena semua prediksi diambil dari JSON lokal
-// Kecuali Anda masih ingin prediksi besok menggunakan API, tapi sekarang kita asumsikan juga dari JSON lokal
 
 // --- Interfaces ---
 type HargaData = {
@@ -35,7 +34,6 @@ const Prediksi = () => {
   const [errorHistorical, setErrorHistorical] = useState('');
 
   // --- States untuk hasil prediksi (diperlukan untuk tampilan "Besok" dan untuk diteruskan ke grafik) ---
-  // Kini juga akan memuat deret prediksi besok dari JSON lokal.
   const [prediksiBesokSeries, setPrediksiBesokSeries] = useState<number[] | null>(null);
   const [loadingPrediksiBesok, setLoadingPrediksiBesok] = useState(false);
   const [errorPrediksiBesok, setErrorPrediksiBesok] = useState('');
@@ -68,9 +66,13 @@ const Prediksi = () => {
         } else {
             setErrorHistorical('Data historis lokal kosong.');
         }
-      } catch (err: any) {
+      } catch (err: unknown) { // Menggunakan 'unknown' untuk tipe error yang lebih aman
         console.error('Error fetching local historical prices:', err);
-        setErrorHistorical(`Gagal memuat harga terkini dari lokal: ${err.message || 'Terjadi kesalahan.'}`);
+        if (err instanceof Error) {
+            setErrorHistorical(`Gagal memuat harga terkini dari lokal: ${err.message}`);
+        } else {
+            setErrorHistorical('Gagal memuat harga terkini dari lokal: Terjadi kesalahan tidak diketahui.');
+        }
       } finally {
         setLoadingHistorical(false);
       }
@@ -80,7 +82,6 @@ const Prediksi = () => {
   }, []); 
 
   // --- Efek samping: Mengambil Prediksi Harga Besok dari utils/api (dari JSON lokal) ---
-  // Prediksi ini selalu dilakukan jika jenis beras dipilih dan digunakan untuk tampilan "Besok" dan grafik.
   useEffect(() => {
     const fetchPredictionTomorrow = async () => {
       if (!jenisBeras || Object.keys(hargaHariIni).length === 0) {
@@ -97,7 +98,6 @@ const Prediksi = () => {
         let predictionResult: number[] = [];
         const stepsAhead = 1; // Untuk prediksi harga besok (1 hari ke depan)
 
-        // Panggil fungsi API yang sesuai (sekarang mengambil dari JSON lokal)
         const api = await import('../utils/api'); // Dynamic import untuk menghindari circular dependency
         switch (jenisBeras) {
           case 'medium_silinda':
@@ -135,9 +135,13 @@ const Prediksi = () => {
         } else {
           setErrorPrediksiBesok('API tidak mengembalikan hasil prediksi.');
         }
-      } catch (err: any) {
+      } catch (err: unknown) { // Menggunakan 'unknown'
         console.error('Error fetching tomorrow prediction:', err);
-        setErrorPrediksiBesok(`Gagal mengambil prediksi besok: ${err.message || 'Terjadi kesalahan tidak diketahui.'}`);
+        if (err instanceof Error) {
+            setErrorPrediksiBesok(`Gagal mengambil prediksi besok: ${err.message}`);
+        } else {
+            setErrorPrediksiBesok('Gagal mengambil prediksi besok: Terjadi kesalahan tidak diketahui.');
+        }
       } finally {
         setLoadingPrediksiBesok(false);
       }
@@ -152,10 +156,9 @@ const Prediksi = () => {
   }, [jenisBeras, model, hargaHariIni]); 
 
   // --- Fungsi: Hitung Persentase Perubahan Harga Besok ---
-  // Menggunakan prediksi terakhir dari deret prediksi besok
   const hitungPersentasePerubahanBesok = () => {
     const prediksiAkhirBesok = prediksiBesokSeries && prediksiBesokSeries.length > 0
-      ? prediksiBesokSeries[prediksiBesokSeries.length - 1]
+      ? prediksiBesokSeries[0] // Prediksi besok adalah indeks 0
       : null;
 
     if (
@@ -330,7 +333,7 @@ const Prediksi = () => {
                 jenisBeras={jenisBeras}
                 model={model}
                 hargaHariIni={hargaHariIni}
-                onPredictionResult={setChartPredictionIdulFitriSeries} // Meneruskan deret prediksi ke state parent
+                onPredictionResult={setChartPredictionIdulFitriSeries} 
               />
             )}
 
@@ -339,26 +342,24 @@ const Prediksi = () => {
                 jenisBeras={jenisBeras}
                 model={model}
                 hargaHariIni={hargaHariIni}
-                onPredictionResult={setChartPredictionNewYearSeries} // Meneruskan deret prediksi ke state parent
+                onPredictionResult={setChartPredictionNewYearSeries} 
               />
             )}
 
             {/* Pesan jika pengguna belum memilih periode khusus */}
             {jenisBeras && !periodePrediksi && (
-              <p className="text-gray-500 text-center">Pilih periode prediksi seperti "Idul Fitri" atau "Tahun Baru" untuk melihat prediksi spesifik.</p>
+              <p className="text-gray-500 text-center">Pilih periode prediksi seperti &#34;Idul Fitri&#34; atau &#34;Tahun Baru&#34; untuk melihat prediksi spesifik.</p> {/* Perbaikan: Escape kutip */}
             )}
             
             {/* Visualisasi Grafis di Paling Bawah */}
-            {/* Tampilkan grafik hanya jika jenis beras dipilih dan ada data historis yang tersedia */}
             {jenisBeras && allHistoricalDataLocal.length > 0 && (
               <PriceChart
                 historicalData={allHistoricalDataLocal}
                 jenisBeras={jenisBeras}
-                predictionTomorrow={displayPrediksiBesok} // Ini adalah nilai tunggal untuk Besok (optional for chart now)
-                predictionTomorrowSeries={prediksiBesokSeries} // Deret prediksi Besok untuk grafik
-                predictionNewYearSeries={chartPredictionNewYearSeries} // Deret prediksi Tahun Baru untuk grafik
-                predictionIdulFitriSeries={chartPredictionIdulFitriSeries} // Deret prediksi Idul Fitri untuk grafik
-                periodePrediksi={periodePrediksi} // Untuk membantu logika di PriceChart
+                predictionTomorrowSeries={prediksiBesokSeries} 
+                predictionNewYearSeries={chartPredictionNewYearSeries} 
+                predictionIdulFitriSeries={chartPredictionIdulFitriSeries} 
+                periodePrediksi={periodePrediksi}
               />
             )}
             
