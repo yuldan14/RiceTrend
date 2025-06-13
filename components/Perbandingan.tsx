@@ -1,17 +1,17 @@
 // beras-frontend/components/Perbandingan.tsx
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react'; // Impor useCallback
+import React, { useState, useEffect } from 'react';
 import {
-  predictMediumSilindaArima,
-  predictMediumSilindaLstm,
+  predictMediumSilindaArima, // Ini akan memanggil getLocalPrediction sekarang
+  predictMediumSilindaLstm, // Ini akan memanggil getLocalPrediction sekarang
   predictPremiumSilindaArima,
   predictPremiumSilindaLstm,
   predictMediumBapanasArima,
   predictMediumBapanasLstm,
   predictPremiumBapanasArima,
   predictPremiumBapanasLstm,
-} from '../utils/api'; // Menggunakan API yang sudah diubah untuk JSON lokal
+} from '../utils/api'; // Pastikan path ini benar
 
 // --- Interfaces ---
 type RiceCategory = 'medium_silinda' | 'premium_silinda' | 'medium_bapanas' | 'premium_bapanas';
@@ -42,7 +42,6 @@ const Perbandingan: React.FC = () => {
   const [globalLoading, setGlobalLoading] = useState(true);
   const [globalError, setGlobalError] = useState<string | null>(null);
 
-  // riceCategories didefinisikan di luar render cycle, jadi stabil
   const riceCategories: { category: RiceCategory; displayName: string }[] = [
     { category: 'medium_silinda', displayName: 'Beras Medium Silinda' },
     { category: 'premium_silinda', displayName: 'Beras Premium Silinda' },
@@ -50,8 +49,8 @@ const Perbandingan: React.FC = () => {
     { category: 'premium_bapanas', displayName: 'Beras Premium Bapanas' },
   ];
 
-  // Helper function untuk mendapatkan fungsi prediksi yang tepat (dibungkus useCallback)
-  const getPredictionFunctions = useCallback((category: RiceCategory) => {
+  // Helper function untuk mendapatkan fungsi prediksi yang tepat (tetap sama)
+  const getPredictionFunctions = (category: RiceCategory) => {
     switch (category) {
       case 'medium_silinda':
         return { arima: predictMediumSilindaArima, lstm: predictMediumSilindaLstm };
@@ -65,9 +64,9 @@ const Perbandingan: React.FC = () => {
         // Fallback, seharusnya tidak tercapai jika `category` selalu valid
         return { arima: predictMediumSilindaArima, lstm: predictMediumSilindaLstm }; 
     }
-  }, []); // Dependensi kosong karena argumen stabil dan tidak menggunakan scope luar
+  };
 
-  // --- Mengambil Data Historis ---
+  // --- Mengambil Data Historis (tetap dari data_harga.json lokal) ---
   useEffect(() => {
     const fetchLocalHistoricalData = async () => {
       try {
@@ -78,12 +77,8 @@ const Perbandingan: React.FC = () => {
         }
         const dataArray: HistoricalPriceData[] = await res.json();
         setAllHistoricalData(dataArray);
-      } catch (err: unknown) { // Menggunakan 'unknown'
-        if (err instanceof Error) {
-            setGlobalError(`Gagal memuat data historis lokal: ${err.message}`);
-        } else {
-            setGlobalError('Gagal memuat data historis lokal: Terjadi kesalahan tidak diketahui.');
-        }
+      } catch (err: any) {
+        setGlobalError(`Gagal memuat data historis lokal: ${err.message || 'Terjadi kesalahan.'}`);
       } finally {
         setGlobalLoading(false);
       }
@@ -92,95 +87,101 @@ const Perbandingan: React.FC = () => {
   }, []);
 
   // --- Mengambil Data Perbandingan (sekarang dari JSON prediksi lokal) ---
-  const fetchComparisonData = useCallback(async () => { // Dibungkus useCallback
+  useEffect(() => {
+    // Jalankan hanya jika data historis sudah dimuat
     if (allHistoricalData.length === 0) return;
 
-    const todayPriceIndex = allHistoricalData.length - 1;
-    if (todayPriceIndex < 0) {
-      setGlobalError('Data historis tidak mencukupi.');
-      return;
-    }
-    
-    const latestData = allHistoricalData[todayPriceIndex];
-
-    const initialComparisonData: ComparisonRowData[] = riceCategories.map((item) => ({
-      category: item.category,
-      displayName: item.displayName,
-      currentPrice: latestData[item.category] as number,
-      predictionArima: null,
-      predictionLstm: null,
-      trend: 'N/A',
-      loading: true,
-      error: null,
-    }));
-    setComparisonData(initialComparisonData);
-
-    const stepsAhead = 1; // Selalu memprediksi untuk hari besok
-
-    const promises = riceCategories.map(async ({ category, displayName }) => {
-      try {
-        const { arima: arimaPredict, lstm: lstmPredict } = getPredictionFunctions(category);
-
-        const [arimaResult, lstmResult] = await Promise.all([
-          arimaPredict(stepsAhead),
-          lstmPredict(stepsAhead)
-        ]);
-
-        const currentPrice = latestData[category] as number;
-        const arimaPredValue = arimaResult.length > 0 ? arimaResult[0] : null;
-        const lstmPredValue = lstmResult.length > 0 ? lstmResult[0] : null;
-
-        let trend: 'Naik' | 'Turun' | 'Stabil' | 'N/A' = 'N/A';
-        const avgPrediction = 
-          (arimaPredValue !== null && lstmPredValue !== null) ? (arimaPredValue + lstmPredValue) / 2 :
-          (arimaPredValue !== null) ? arimaPredValue :
-          (lstmPredValue !== null) ? lstmPredValue : null;
-
-        if (currentPrice && avgPrediction !== null) {
-          const threshold = currentPrice * 0.01; 
-          if (avgPrediction > currentPrice + threshold) trend = 'Naik';
-          else if (avgPrediction < currentPrice - threshold) trend = 'Turun';
-          else trend = 'Stabil';
-        }
-
-        return {
-          category,
-          predictionArima: arimaPredValue,
-          predictionLstm: lstmPredValue,
-          trend,
-          loading: false,
-          error: null,
-        };
-      } catch (err: unknown) { // Menggunakan 'unknown'
-        console.error(`Error fetching prediction for ${displayName}:`, err);
-        let errorMessage = 'Error tidak diketahui.';
-        if (err instanceof Error) {
-            errorMessage = err.message;
-        }
-        return {
-          category,
-          predictionArima: null,
-          predictionLstm: null,
-          trend: 'N/A' as const,
-          loading: false,
-          error: `Gagal prediksi: ${errorMessage}`,
-        };
+    const fetchComparisonData = async () => {
+      const todayPriceIndex = allHistoricalData.length - 1;
+      if (todayPriceIndex < 0) {
+        setGlobalError('Data historis tidak mencukupi.');
+        return;
       }
-    });
+      
+      const latestData = allHistoricalData[todayPriceIndex]; // Harga hari ini
 
-    const results = await Promise.all(promises);
+      // Inisialisasi data perbandingan dengan harga saat ini dan status loading
+      const initialComparisonData: ComparisonRowData[] = riceCategories.map((item) => ({
+        category: item.category,
+        displayName: item.displayName,
+        currentPrice: latestData[item.category] as number,
+        predictionArima: null,
+        predictionLstm: null,
+        trend: 'N/A',
+        loading: true,
+        error: null,
+      }));
+      setComparisonData(initialComparisonData);
 
-    setComparisonData((prevData) =>
-      prevData.map((row) => {
-        const result = results.find(r => r.category === row.category);
-        return result ? { ...row, ...result } : row;
-      })
-    );
-  }, [allHistoricalData, riceCategories, getPredictionFunctions]); // Tambahkan dependensi
+      const stepsAhead = 1; // Selalu memprediksi untuk hari besok
 
-  useEffect(() => {
+      // Buat array promises untuk mengambil prediksi secara paralel dari JSON lokal
+      const promises = riceCategories.map(async ({ category, displayName }) => {
+        try {
+          // Tidak perlu lagi `last10Values` karena prediksi sudah di-pre-compute
+          
+          const { arima: arimaPredict, lstm: lstmPredict } = getPredictionFunctions(category);
+
+          // Panggil prediksi secara paralel dari utils/api (yang kini baca JSON lokal)
+          const [arimaResult, lstmResult] = await Promise.all([
+            arimaPredict(stepsAhead), // Meminta 1 hari ke depan dari JSON
+            lstmPredict(stepsAhead)   // Meminta 1 hari ke depan dari JSON
+          ]);
+
+          // Hitung trend
+          const currentPrice = latestData[category] as number;
+          const arimaPredValue = arimaResult.length > 0 ? arimaResult[0] : null;
+          const lstmPredValue = lstmResult.length > 0 ? lstmResult[0] : null;
+
+          let trend: 'Naik' | 'Turun' | 'Stabil' | 'N/A' = 'N/A';
+          // Hitung rata-rata jika keduanya ada, atau gunakan salah satu jika yang lain null
+          const avgPrediction = 
+            (arimaPredValue !== null && lstmPredValue !== null) ? (arimaPredValue + lstmPredValue) / 2 :
+            (arimaPredValue !== null) ? arimaPredValue :
+            (lstmPredValue !== null) ? lstmPredValue : null;
+
+          if (currentPrice && avgPrediction !== null) {
+            const threshold = currentPrice * 0.01; // Toleransi 1% untuk dianggap "Stabil"
+            if (avgPrediction > currentPrice + threshold) trend = 'Naik';
+            else if (avgPrediction < currentPrice - threshold) trend = 'Turun';
+            else trend = 'Stabil';
+          }
+
+          return {
+            category,
+            predictionArima: arimaPredValue,
+            predictionLstm: lstmPredValue,
+            trend,
+            loading: false,
+            error: null,
+          };
+        } catch (err: any) {
+          console.error(`Error fetching prediction for ${displayName}:`, err);
+          return {
+            category,
+            predictionArima: null,
+            predictionLstm: null,
+            trend: 'N/A' as const,
+            loading: false,
+            error: `Gagal prediksi: ${err.message || 'Error tidak diketahui.'}`,
+          };
+        }
+      });
+
+      // Tunggu semua prediksi selesai
+      const results = await Promise.all(promises);
+
+      // Update state `comparisonData` dengan hasil prediksi
+      setComparisonData((prevData) =>
+        prevData.map((row) => {
+          const result = results.find(r => r.category === row.category);
+          return result ? { ...row, ...result } : row;
+        })
+      );
+    };
+
     fetchComparisonData();
-  }, [fetchComparisonData]); // fetchComparisonData dibungkus useCallback, jadi aman
+  }, [allHistoricalData]); // Bergantung pada allHistoricalData
 
   return (
     <div className="my-20 mx-5 p-5 bg-white shadow-lg rounded-lg">

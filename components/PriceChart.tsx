@@ -24,26 +24,10 @@ type HistoricalPriceData = {
   premium_bapanas: number;
 };
 
-// --- BARU: Interface untuk item data di chartData ---
-interface ChartDataItem {
-  date: string;
-  price: number;
-  isPrediction: boolean;
-  label: string;
-}
-
-// --- BARU: Interface untuk props TooltipContent ---
-interface CustomTooltipProps {
-    active?: boolean;
-    payload?: Array<{ name: string; value: number; color: string; payload: ChartDataItem }>;
-    label?: string;
-}
-
-
 interface PriceChartProps {
   historicalData: HistoricalPriceData[]; 
   jenisBeras: string; 
-  // predictionTomorrow: number | null; // DIHAPUS - tidak digunakan
+  predictionTomorrow: number | null; 
   predictionTomorrowSeries: number[] | null; 
   predictionNewYearSeries: number[] | null; 
   predictionIdulFitriSeries: number[] | null; 
@@ -53,7 +37,7 @@ interface PriceChartProps {
 const PriceChart: React.FC<PriceChartProps> = ({
   historicalData,
   jenisBeras,
-  // predictionTomorrow, // DIHAPUS dari destructuring
+  predictionTomorrow, 
   predictionTomorrowSeries, 
   predictionNewYearSeries, 
   predictionIdulFitriSeries, 
@@ -67,8 +51,7 @@ const PriceChart: React.FC<PriceChartProps> = ({
     );
   }
 
-  // Gunakan tipe yang lebih spesifik: ChartDataItem[]
-  const chartData: ChartDataItem[] = historicalData.map((data) => ({
+  const chartData: any[] = historicalData.map((data) => ({
     date: data.date,
     price: data[jenisBeras as keyof HistoricalPriceData],
     isPrediction: false,
@@ -140,15 +123,14 @@ const PriceChart: React.FC<PriceChartProps> = ({
     return format(parseISO(isoDateString), 'MMM dd, yy'); 
   };
 
-  // Komponen kustom untuk Tooltip (kotak info saat hover pada grafik).
-  // Gunakan interface CustomTooltipProps yang baru.
-  const TooltipContent: React.FC<CustomTooltipProps> = ({ active, payload, label }) => {
+  // Komponen kustom untuk Tooltip (kotak info saat hover pada grafik)
+  const TooltipContent = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       const dataPoint = chartData.find(d => d.date === label);
       return (
         <div className="custom-tooltip bg-white p-3 border border-gray-300 rounded shadow-md">
-          <p className="label font-bold text-gray-800">{`Tanggal : ${format(parseISO(label || ''), 'dd MMMMyyyy')}`}</p> {/* handle label || '' for safety */}
-          <p className="intro text-indigo-700">{`Harga : Rp ${payload[0]?.value?.toLocaleString('id-ID')}`}</p> {/* handle payload[0]?.value for safety */}
+          <p className="label font-bold text-gray-800">{`Tanggal : ${format(parseISO(label), 'dd MMMMyyyy')}`}</p>
+          <p className="intro text-indigo-700">{`Harga : Rp ${payload[0].value?.toLocaleString('id-ID')}`}</p>
           {dataPoint?.isPrediction && <p className="desc text-sm text-gray-500">{dataPoint.label}</p>}
         </div>
       );
@@ -195,7 +177,7 @@ const PriceChart: React.FC<PriceChartProps> = ({
             stroke="#6366f1" 
             strokeWidth={2}
             name={`Harga ${jenisBeras.replace('_', ' ').replace(/\b\w/g, char => char.toUpperCase())}`}
-            dot={({ cx, cy, key, payload }) => { // Hapus 'stroke' dari destructuring
+            dot={({ cx, cy, stroke, key, payload }) => {
                 const dateObj = parseISO(payload.date);
                 // Tampilkan dot hanya jika tanggalnya adalah tanggal 1 setiap bulan
                 if (getDate(dateObj) === 1) { 
@@ -204,14 +186,14 @@ const PriceChart: React.FC<PriceChartProps> = ({
                             key={key} 
                             cx={cx} 
                             cy={cy} 
-                            r={payload.isPrediction ? 6 : 4} 
-                            fill={payload.isPrediction ? "#ef4444" : "#6366f1"} 
+                            r={payload.isPrediction ? 6 : 4} // Ukuran lebih besar untuk titik prediksi
+                            fill={payload.isPrediction ? "#ef4444" : "#6366f1"} // Warna merah untuk prediksi, ungu untuk historis
                             stroke={payload.isPrediction ? "#dc2626" : "#6366f1"} 
                             strokeWidth={payload.isPrediction ? 2 : 1}
                         />
                     ); 
                 }
-                return null; 
+                return null; // Jangan tampilkan dot untuk titik data lainnya
             }}
           />
         </LineChart>

@@ -1,7 +1,7 @@
 // beras-frontend/components/Prediksi.tsx
 'use client'; 
 
-import React, { useState, useEffect, useCallback } from "react"; 
+import React, { useState, useEffect, useCallback } from "react"; // Impor useCallback
 import NewYearPred from "./NewYearPred"; 
 import IdulFitriPred from "./IdulFitriPred"; 
 import PriceChart from "./PriceChart"; 
@@ -20,14 +20,6 @@ interface HistoricalPriceData {
   medium_bapanas: number;
   premium_bapanas: number;
 }
-
-// --- BARU: Mapping untuk Nama Tampilan Kategori Beras ---
-const riceCategoryDisplayNames: Record<keyof HargaData, string> = {
-  medium_silinda: "Beras Medium Silinda",
-  premium_silinda: "Beras Premium Silinda",
-  medium_bapanas: "Beras Medium Bapanas",
-  premium_bapanas: "Beras Premium Bapanas",
-};
 
 const Prediksi = () => {
   // --- States untuk pilihan pengguna dari dropdown ---
@@ -73,7 +65,7 @@ const Prediksi = () => {
       } else {
           setErrorHistorical('Data historis lokal kosong.');
       }
-    } catch (err: unknown) { 
+    } catch (err: unknown) {
       console.error('Error fetching local historical prices:', err);
       if (err instanceof Error) {
           setErrorHistorical(`Gagal memuat harga terkini dari lokal: ${err.message}`);
@@ -83,11 +75,11 @@ const Prediksi = () => {
     } finally {
       setLoadingHistorical(false);
     }
-  }, []); 
+  }, []); // Dependensi kosong karena tidak bergantung pada props/state
 
   useEffect(() => {
     fetchLocalHistoricalData();
-  }, [fetchLocalHistoricalData]); 
+  }, [fetchLocalHistoricalData]); // Tambahkan fetchLocalHistoricalData sebagai dependensi
 
   // --- Efek samping: Mengambil Prediksi Harga Besok dari utils/api (dari JSON lokal) ---
   const fetchPredictionTomorrow = useCallback(async () => { // Gunakan useCallback
@@ -112,25 +104,25 @@ const Prediksi = () => {
             model === 'ARIMA'
               ? await api.predictMediumSilindaArima(stepsAhead)
               : await api.predictMediumSilindaLstm(stepsAhead);
-            break;
+          break;
         case 'premium_silinda':
           predictionResult =
             model === 'ARIMA'
               ? await api.predictPremiumSilindaArima(stepsAhead)
               : await api.predictPremiumSilindaLstm(stepsAhead);
-            break;
+          break;
         case 'medium_bapanas':
           predictionResult =
             model === 'ARIMA'
               ? await api.predictMediumBapanasArima(stepsAhead)
               : await api.predictMediumBapanasLstm(stepsAhead);
-            break;
+          break;
         case 'premium_bapanas':
           predictionResult =
             model === 'ARIMA'
               ? await api.predictPremiumBapanasArima(stepsAhead)
               : await api.predictPremiumBapanasLstm(stepsAhead);
-            break;
+          break;
         default:
           setErrorPrediksiBesok('Jenis beras tidak valid.');
           setLoadingPrediksiBesok(false);
@@ -190,14 +182,8 @@ const Prediksi = () => {
     ? prediksiBesokSeries[0] 
     : null;
 
-  // --- BARU: Fungsi helper untuk mendapatkan nama tampilan ---
-  const getDisplayName = (category: keyof HargaData) => {
-    return riceCategoryDisplayNames[category] || category.replace('_', ' ').replace(/\b\w/g, char => char.toUpperCase());
-  };
-
-
   return (
-    <div className="min-h-screen bg-gray-50 pb-10"> 
+    <div className="min-h-screen bg-gray-50 pb-10">
       {/* Title Bar Aplikasi (sticky di bagian atas) */}
       <div className="shadow-md h-15 bg-white sticky top-0 z-10 flex items-center">
         <span className="h-full w-full flex items-center font-sans font-bold text-lg text-gray-900 ml-5 py-4">
@@ -220,12 +206,10 @@ const Prediksi = () => {
             <option value="" disabled hidden>
               Pilih Jenis Beras
             </option>
-            {/* Menggunakan nilai kategori sebagai value, dan display name sebagai label */}
-            {Object.keys(riceCategoryDisplayNames).map(key => (
-                <option key={key} value={key}>
-                    {riceCategoryDisplayNames[key as keyof HargaData]}
-                </option>
-            ))}
+            <option value="medium_silinda">Beras Medium Silinda</option>
+            <option value="premium_silinda">Beras Premium Silinda</option>
+            <option value="medium_bapanas">Beras Medium Bapanas</option>
+            <option value="premium_bapanas">Beras Premium Bapanas</option>
           </select>
         </div>
 
@@ -281,7 +265,7 @@ const Prediksi = () => {
                  <div className="flex w-full md:w-9/10 p-5 border border-gray-200 rounded-xl bg-white shadow-md justify-between items-center">
                     <div>
                         <div className="font-sans text-md text-gray-500 mb-2">
-                            Harga Saat Ini ({getDisplayName(jenisBeras)}) {/* Perbaikan di sini */}
+                            Harga Saat Ini ({jenisBeras.replace('_', ' ').replace(/\b\w/g, char => char.toUpperCase())})
                         </div>
                         <div className="font-bold text-2xl text-gray-900">
                             {`Rp ${hargaHariIni[jenisBeras]?.toLocaleString('id-ID')}`}
