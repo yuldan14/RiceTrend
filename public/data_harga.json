@@ -9758,5 +9758,109 @@
         "premium_silinda": 14750.0,
         "medium_bapanas": 14000.0,
         "premium_bapanas": 14750.0
+    },
+    {
+        "id": 55132,
+        "date": "2025-06-13",
+        "medium_silinda": 14000.0,
+        "premium_silinda": 14750.0,
+        "medium_bapanas": 14000.0,
+        "premium_bapanas": 14750.0
+    },
+    {
+        "id": 56354,
+        "date": "2025-06-14",
+        "medium_silinda": 14000.0,
+        "premium_silinda": 14500.0,
+        "medium_bapanas": 14000.0,
+        "premium_bapanas": 15000.0
+    },
+    {
+        "id": 57577,
+        "date": "2025-06-15",
+        "medium_silinda": 14000.0,
+        "premium_silinda": 14750.0,
+        "medium_bapanas": 14000.0,
+        "premium_bapanas": 15000.0
+    },
+    {
+        "id": 58801,
+        "date": "2025-06-16",
+        "medium_silinda": 14000.0,
+        "premium_silinda": 14750.0,
+        "medium_bapanas": 14000.0,
+        "premium_bapanas": 14750.0
+    },
+    {
+        "id": 60026,
+        "date": "2025-06-17",
+        "medium_silinda": 14000.0,
+        "premium_silinda": 14750.0,
+        "medium_bapanas": 14000.0,
+        "premium_bapanas": 14750.0
+    },
+    {
+        "id": 61252,
+        "date": "2025-06-18",
+        "medium_silinda": 14000.0,
+        "premium_silinda": 14750.0,
+        "medium_bapanas": 14000.0,
+        "premium_bapanas": 15000.0
+    },
+    {
+        "id": 62479,
+        "date": "2025-06-19",
+        "medium_silinda": 14000.0,
+        "premium_silinda": 14750.0,
+        "medium_bapanas": 14000.0,
+        "premium_bapanas": 14750.0
+    },
+    {
+        "id": 63707,
+        "date": "2025-06-20",
+        "medium_silinda": 14000.0,
+        "premium_silinda": 14750.0,
+        "medium_bapanas": 14000.0,
+        "premium_bapanas": 14750.0
+    },
+    {
+        "id": 64936,
+        "date": "2025-06-21",
+        "medium_silinda": 14000.0,
+        "premium_silinda": 14750.0,
+        "medium_bapanas": 14000.0,
+        "premium_bapanas": 15000.0
+    },
+    {
+        "id": 66166,
+        "date": "2025-06-22",
+        "medium_silinda": 14000.0,
+        "premium_silinda": 14750.0,
+        "medium_bapanas": 14000.0,
+        "premium_bapanas": 14750.0
+    },
+    {
+        "id": 67397,
+        "date": "2025-06-23",
+        "medium_silinda": 14000.0,
+        "premium_silinda": 14750.0,
+        "medium_bapanas": 14000.0,
+        "premium_bapanas": 15000.0
+    },
+    {
+        "id": 68629,
+        "date": "2025-06-24",
+        "medium_silinda": 14000.0,
+        "premium_silinda": 14750.0,
+        "medium_bapanas": 14000.0,
+        "premium_bapanas": 14750.0
+    },
+    {
+        "id": 69862,
+        "date": "2025-06-25",
+        "medium_silinda": 14000.0,
+        "premium_silinda": 14750.0,
+        "medium_bapanas": 14000.0,
+        "premium_bapanas": 14750.0
     }
 ]
