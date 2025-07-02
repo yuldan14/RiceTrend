@@ -193,7 +193,12 @@ const PriceChart: React.FC<PriceChartProps> = ({
                         />
                     ); 
                 }
-                return null; // Jangan tampilkan dot untuk titik data lainnya
+                // Return an invisible SVG element instead of null to satisfy type requirements
+                return (
+                    <g>
+                        <circle cx={cx} cy={cy} r={0} fill="none" />
+                    </g>
+                );
             }}
           />
         </LineChart>
