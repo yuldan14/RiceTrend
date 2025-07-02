@@ -5,7 +5,7 @@ export default function Home() {
   return (
     <div className="overflow-x-hidden">
       {/* Sidebar fixed */}
-      <div className="fixed z-50 h-screen w-64 shadow-xl">
+      <div className="fixed z-50 h-screen w-64 shadow-xl bg-cyan-600">
         <Sidebar />
       </div>
 

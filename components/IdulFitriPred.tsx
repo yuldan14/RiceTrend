@@ -191,7 +191,7 @@ const IdulFitriPred: React.FC<IdulFitriPredProps> = ({
     : null;
 
   return (
-    <div className="w-full md:w-9/10 p-5 border border-gray-200 rounded-xl bg-white shadow-md flex justify-between items-center">
+    <div className="w-full md:w-9/10 p-5 border border-gray-200 rounded-xl bg-white flex justify-between items-center">
       <div>
         <div className="font-sans text-md text-gray-500 mb-2">
           Prediksi Harga Idul Fitri {targetIdulFitriYear ? targetIdulFitriYear : 'Mendatang'} Model {model}

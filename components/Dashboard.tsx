@@ -169,25 +169,30 @@ const Dashboard = () => {
   const isNaik = persentase !== null && Number(persentase) > 0;
   const isTurun = persentase !== null && Number(persentase) < 0;
 
-  return (
-    <div>
-      {/* Dashboard Title */}
-      <div className="shadow-md h-15 bg-white">
-        <span className="h-full w-full flex items-center font-sans font-bold text-lg text-gray-900 ml-5">
+return (
+  <div className="bg-gray-50 min-h-screen">
+    {/* Dashboard Title */}
+    <div className="bg-white shadow-lg border-b border-gray-200">
+      <div className="h-16 flex items-center px-6">
+        <h1 className="text-xl font-bold text-gray-800 font-sans">
           Dashboard Prediksi Harga Beras
-        </span>
+        </h1>
       </div>
+    </div>
 
-      {/* Pilihan Jenis Beras & Model */}
-      <div className="flex h-20 justify-between px-32 mt-5">
-        <div className="flex flex-col">
-          <span className="text-center font-sans">Jenis Beras</span>
+    {/* Pilihan Jenis Beras & Model */}
+    <div className="bg-white mx-6 mt-6 p-6 rounded-xl shadow-md border border-gray-200">
+      <div className="flex justify-between items-end gap-8">
+        <div className="flex flex-col flex-1">
+          <label className="text-sm font-medium text-gray-700 mb-2 font-sans">
+            Jenis Beras
+          </label>
           <select
             name="jenisBeras"
             id="jenisBeras"
             value={jenisBeras}
             onChange={(e) => setJenisBeras(e.target.value as keyof HargaData)}
-            className="w-100 h-10 px-4 border border-gray-300 rounded-md bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 font-sans"
+            className="w-full h-12 px-4 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 font-sans shadow-sm"
           >
             <option value="" disabled hidden>
               Pilih Jenis Beras
@@ -199,99 +204,135 @@ const Dashboard = () => {
           </select>
         </div>
 
-        <div className="flex flex-col">
-          <span className="text-center font-sans">Model</span>
+        <div className="flex flex-col flex-1">
+          <label className="text-sm font-medium text-gray-700 mb-2 font-sans">
+            Model Prediksi
+          </label>
           <select
             name="model"
             id="model"
             value={model}
             onChange={(e) => setModel(e.target.value as 'ARIMA' | 'LSTM')}
-            className="w-100 h-10 px-4 border border-gray-300 rounded-md bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 font-sans"
+            className="w-full h-12 px-4 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 font-sans shadow-sm"
           >
             <option value="ARIMA">ARIMA</option>
             <option value="LSTM">LSTM</option>
           </select>
         </div>
       </div>
+    </div>
 
-      {/* Dashboard Boxes */}
-      <div className="w-full h-full py-10 flex flex-col items-center justify-center gap-10">
-        {/* Harga Saat Ini */}
-        <div className="flex w-9/10 h-30 border border-gray-200 rounded-2xl bg-gray-100 px-5 justify-between items-center">
-          <div>
-            <div className="font-sans text-md text-gray-500 mb-2">
-              Harga Saat Ini
+    {/* Dashboard Cards */}
+    <div className="px-6 py-6 space-y-6">
+      {/* Harga Saat Ini */}
+      <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6 hover:shadow-lg transition-shadow duration-200">
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="bg-blue-100 p-2 rounded-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+                  <path fill="#3B82F6" d="M3.5 18.5L2 17l7.5-7.5l4 4l7.1-8L22 6.9l-8.5 9.6l-4-4z"/>
+                </svg>
+              </div>
+              <h3 className="font-sans text-lg font-semibold text-gray-800">
+                Harga Saat Ini
+              </h3>
             </div>
-            <div className="font-bold text-xl">
+            <div className="text-3xl font-bold text-gray-900">
               {jenisBeras && hargaHariIni[jenisBeras] !== undefined
                 ? `Rp ${hargaHariIni[jenisBeras]?.toLocaleString('id-ID')}`
-                : '-'}
+                : 'Pilih jenis beras'}
             </div>
-          </div>
-          <div className="bg-blue-300 rounded-md w-min h-min">
-            <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24">
-              <path fill="#1D4ED8" d="M3.5 18.5L2 17l7.5-7.5l4 4l7.1-8L22 6.9l-8.5 9.6l-4-4z"/>
-            </svg>
+            <p className="text-sm text-gray-500 mt-2 font-sans">
+              Harga berdasarkan data terkini
+            </p>
           </div>
         </div>
+      </div>
 
-        {/* Prediksi Harga Besok */}
-        <div className="w-9/10 h-30 border border-gray-200 rounded-2xl bg-gray-100 px-5 flex justify-between items-center">
-          <div>
-            <div className="font-sans text-md text-gray-500 mb-2">
-              Prediksi Harga Besok Model {model}
+      {/* Prediksi Harga Besok */}
+      <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6 hover:shadow-lg transition-shadow duration-200">
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="bg-emerald-100 p-2 rounded-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+                  <path fill="#10B981" d="M17 20q-.425 0-.712-.288T16 19v-5q0-.425.288-.712T17 13h2q.425 0 .713.288T20 14v5q0 .425-.288.713T19 20zm-6 0q-.425 0-.712-.288T10 19V5q0-.425.288-.712T11 4h2q.425 0 .713.288T14 5v14q0 .425-.288.713T13 20zm-6 0q-.425 0-.712-.288T4 19v-9q0-.425.288-.712T5 9h2q.425 0 .713.288T8 10v9q0 .425-.288.713T7 20z"/>
+                </svg>
+              </div>
+              <h3 className="font-sans text-lg font-semibold text-gray-800">
+                Prediksi Harga Besok - Model {model}
+              </h3>
             </div>
-            <div className="font-bold text-xl">
-              {loading && 'Memuat...'}
-              {error && <span className="text-red-500">{error}</span>}
+            
+            <div className="text-3xl font-bold text-gray-900 mb-3">
+              {loading && (
+                <div className="flex items-center gap-3">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-500"></div>
+                  <span className="text-lg text-emerald-600">Memuat prediksi...</span>
+                </div>
+              )}
+              {error && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <span className="text-red-600 text-base font-medium">{error}</span>
+                </div>
+              )}
               {!loading &&
                 !error &&
                 prediksi !== null &&
                 `Rp ${prediksi.toLocaleString('id-ID')}`}
-              {!loading && !error && prediksi === null && !jenisBeras && '-'}
+              {!loading && !error && prediksi === null && !jenisBeras && 'Pilih jenis beras'}
             </div>
+            
             {/* Keterangan naik/turun dari hari ini */}
-            <div>
+            <div className="mt-3">
               {persentase !== null ? (
-                <p
-                  className={`text-sm font-sans ${
-                    isNaik
-                      ? 'text-green-600'
-                      : isTurun
-                      ? 'text-red-600'
-                      : 'text-gray-600'
-                  }`}
-                >
-                  {isNaik && '↗ +'}{isTurun && '↘ '}{persentase}% dari hari ini
-                </p>
+                <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${
+                  isNaik
+                    ? 'bg-green-100 text-green-700 border border-green-200'
+                    : isTurun
+                    ? 'bg-red-100 text-red-700 border border-red-200'
+                    : 'bg-gray-100 text-gray-700 border border-gray-200'
+                }`}>
+                  {isNaik && (
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M5.293 7.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L6.707 7.707a1 1 0 01-1.414 0z" clipRule="evenodd"/>
+                    </svg>
+                  )}
+                  {isTurun && (
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M14.707 12.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 14.586V3a1 1 0 112 0v11.586l2.293-2.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+                    </svg>
+                  )}
+                  <span>
+                    {isNaik && '+'}{persentase}% dari hari ini
+                  </span>
+                </div>
               ) : (
-                <p className="text-gray-500 text-sm font-sans">
+                <p className="text-gray-500 text-sm font-sans bg-gray-50 px-3 py-2 rounded-lg inline-block">
                   {jenisBeras ? 'Data perubahan tidak tersedia' : 'Pilih jenis beras untuk melihat perubahan'}
                 </p>
               )}
             </div>
           </div>
-          <div className="bg-green-300 rounded-md w-min h-min ">
-            <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24">
-              <path fill="#15803D" d="M17 20q-.425 0-.712-.288T16 19v-5q0-.425.288-.712T17 13h2q.425 0 .713.288T20 14v5q0 .425-.288.713T19 20zm-6 0q-.425 0-.712-.288T10 19V5q0-.425.288-.712T11 4h2q.425 0 .713.288T14 5v14q0 .425-.288.713T13 20zm-6 0q-.425 0-.712-.288T4 19v-9q0-.425.288-.712T5 9h2q.425 0 .713.288T8 10v9q0 .425-.288.713T7 20z"/>
-            </svg>
-          </div>
         </div>
-
-        {/* Prediksi Untuk Tanggal Tahun Baru - Menggunakan Komponen Terpisah */}
-        <NewYearPred
-          jenisBeras={jenisBeras}
-          model={model}
-          hargaHariIni={hargaHariIni}
-        />
-        <IdulFitriPred
-          jenisBeras={jenisBeras}
-          model={model}
-          hargaHariIni={hargaHariIni}
-        />
       </div>
+
+      {/* Prediksi Untuk Tanggal Tahun Baru - Menggunakan Komponen Terpisah */}
+      <NewYearPred
+        jenisBeras={jenisBeras}
+        model={model}
+        hargaHariIni={hargaHariIni}
+      />
+      <IdulFitriPred
+        jenisBeras={jenisBeras}
+        model={model}
+        hargaHariIni={hargaHariIni}
+      />
     </div>
-  );
-};
+  </div>
+);
+
+}
 
 export default Dashboard;

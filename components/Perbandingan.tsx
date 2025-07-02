@@ -184,97 +184,97 @@ const Perbandingan: React.FC = () => {
   }, [allHistoricalData]); // Bergantung pada allHistoricalData
 
   return (
-    <div className="my-20 mx-5 p-5 bg-white shadow-lg rounded-lg">
-      <h1 className="font-sans font-bold text-center text-2xl mb-8 text-gray-800">
-        Perbandingan Harga Semua Jenis Beras
-      </h1>
-      
-      {globalLoading && (
-        <p className="text-center text-blue-600 text-lg">Memuat data perbandingan...</p>
-      )}
-      
-      {globalError && (
-        <p className="text-center text-red-600 text-lg">Error: {globalError}</p>
-      )}
+  <div className="my-20 mx-5 p-5 bg-white shadow-lg rounded-lg">
+    <h1 className="font-sans font-bold text-center text-2xl mb-8 text-gray-800">
+      Perbandingan Harga Semua Jenis Beras
+    </h1>
+    
+    {globalLoading && (
+      <p className="text-center text-blue-600 text-lg">Memuat data perbandingan...</p>
+    )}
+    
+    {globalError && (
+      <p className="text-center text-red-600 text-lg">Error: {globalError}</p>
+    )}
 
-      {!globalLoading && !globalError && comparisonData.length > 0 && (
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Jenis Beras
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Harga Saat Ini
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Prediksi ARIMA
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Prediksi LSTM
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Trend
-                </th>
+    {!globalLoading && !globalError && comparisonData.length > 0 && (
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Jenis Beras
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Harga Saat Ini
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Prediksi ARIMA
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Prediksi LSTM
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Trend
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {comparisonData.map((row) => (
+              <tr key={row.category} className="odd:bg-gray-50 even:bg-white hover:bg-gray-100 transition-colors duration-150">
+                <td className="px-4 py-2 whitespace-nowrap font-medium text-gray-900">
+                  {row.displayName}
+                </td>
+                <td className="px-4 py-2 whitespace-nowrap text-gray-700">
+                  {row.currentPrice !== null ? `Rp${row.currentPrice.toLocaleString('id-ID')}` : 'N/A'}
+                </td>
+                <td className="px-4 py-2 whitespace-nowrap text-gray-700">
+                  {row.loading ? (
+                    <span className="text-blue-500">Memuat...</span>
+                  ) : row.error ? (
+                    <span className="text-red-500" title={row.error}>Error</span>
+                  ) : row.predictionArima !== null ? (
+                    `Rp${Math.round(row.predictionArima).toLocaleString('id-ID')}`
+                  ) : (
+                    'N/A'
+                  )}
+                </td>
+                <td className="px-4 py-2 whitespace-nowrap text-gray-700">
+                  {row.loading ? (
+                    <span className="text-blue-500">Memuat...</span>
+                  ) : row.error ? (
+                    <span className="text-red-500" title={row.error}>Error</span>
+                  ) : row.predictionLstm !== null ? (
+                    `Rp${Math.round(row.predictionLstm).toLocaleString('id-ID')}`
+                  ) : (
+                    'N/A'
+                  )}
+                </td>
+                <td
+                  className={`px-4 py-2 whitespace-nowrap font-semibold ${
+                    row.trend === 'Naik'
+                      ? 'text-green-600'
+                      : row.trend === 'Turun'
+                      ? 'text-red-600'
+                      : 'text-gray-600'
+                  }`}
+                >
+                  {row.trend}
+                </td>
               </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {comparisonData.map((row) => (
-                <tr key={row.category} className="odd:bg-gray-50 even:bg-white hover:bg-gray-100 transition-colors duration-150">
-                  <td className="px-4 py-2 whitespace-nowrap font-medium text-gray-900">
-                    {row.displayName}
-                  </td>
-                  <td className="px-4 py-2 whitespace-nowrap text-gray-700">
-                    {row.currentPrice !== null ? `Rp${row.currentPrice.toLocaleString('id-ID')}` : 'N/A'}
-                  </td>
-                  <td className="px-4 py-2 whitespace-nowrap text-gray-700">
-                    {row.loading ? (
-                      <span className="text-blue-500">Memuat...</span>
-                    ) : row.error ? (
-                      <span className="text-red-500" title={row.error}>Error</span>
-                    ) : row.predictionArima !== null ? (
-                      `Rp${Math.round(row.predictionArima).toLocaleString('id-ID')}`
-                    ) : (
-                      'N/A'
-                    )}
-                  </td>
-                  <td className="px-4 py-2 whitespace-nowrap text-gray-700">
-                    {row.loading ? (
-                      <span className="text-blue-500">Memuat...</span>
-                    ) : row.error ? (
-                      <span className="text-red-500" title={row.error}>Error</span>
-                    ) : row.predictionLstm !== null ? (
-                      `Rp${Math.round(row.predictionLstm).toLocaleString('id-ID')}`
-                    ) : (
-                      'N/A'
-                    )}
-                  </td>
-                  <td
-                    className={`px-4 py-2 whitespace-nowrap font-semibold ${
-                      row.trend === 'Naik'
-                        ? 'text-green-600'
-                        : row.trend === 'Turun'
-                        ? 'text-red-600'
-                        : 'text-gray-600'
-                    }`}
-                  >
-                    {row.trend}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-      
-      {!globalLoading && !globalError && comparisonData.length === 0 && (
-        <p className="text-center text-gray-500 text-lg">
-          Tidak ada data perbandingan untuk ditampilkan.
-        </p>
-      )}
-    </div>
-  );
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
+    
+    {!globalLoading && !globalError && comparisonData.length === 0 && (
+      <p className="text-center text-gray-500 text-lg">
+        Tidak ada data perbandingan untuk ditampilkan.
+      </p>
+    )}
+  </div>
+);
 };
 
 export default Perbandingan;

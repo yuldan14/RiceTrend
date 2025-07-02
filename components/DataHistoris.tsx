@@ -192,92 +192,183 @@ const DataHistoris: React.FC = () => {
   };
 
   return (
-    <div>
-      {/* --- Title Dashboard --- */}
-      <div className="shadow-md h-15 bg-white">
-        <span className="h-full w-full flex items-center font-sans font-bold text-lg text-gray-900 ml-5">
-          Data Harga Historis
-        </span>
+  <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    {/* --- Title Dashboard --- */}
+    <div className="bg-white shadow-lg border-b border-gray-200">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center">
+            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg mr-3 flex items-center justify-center">
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+            </div>
+            Data Harga Historis
+          </h1>
+        </div>
       </div>
+    </div>
 
-      <div className="mt-10 pl-10 pr-10 flex flex-col gap-y-8">
-        {/* --- Filter Pilih Periode Tanggal --- */}
-        <div className="flex flex-wrap items-center gap-3">
-          <label htmlFor="start-date" className="font-semibold text-gray-700">Dari:</label>
-          <input
-            type="date"
-            id="start-date"
-            className="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-          />
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      {/* --- Filter Pilih Periode Tanggal --- */}
+      <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+        <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+          <svg className="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.707A1 1 0 013 7V4z" />
+          </svg>
+          Filter Periode
+        </h2>
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center space-x-2">
+            <label htmlFor="start-date" className="text-sm font-medium text-gray-700">Dari:</label>
+            <input
+              type="date"
+              id="start-date"
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+            />
+          </div>
 
-          <label htmlFor="end-date" className="font-semibold text-gray-700">Sampai:</label>
-          <input
-            type="date"
-            id="end-date"
-            className="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-          />
+          <div className="flex items-center space-x-2">
+            <label htmlFor="end-date" className="text-sm font-medium text-gray-700">Sampai:</label>
+            <input
+              type="date"
+              id="end-date"
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+            />
+          </div>
 
           <button
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            className="px-6 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg hover:from-blue-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
             onClick={handleApplyFilter}
           >
             Terapkan Filter
           </button>
         </div>
+      </div>
 
-        {/* --- Area Visualisasi Grafis --- */}
-        <div className="mt-8 p-5 border border-gray-200 rounded-lg bg-white shadow-sm h-[400px]">
-          <h3 className="font-semibold text-lg text-gray-800 mb-4">Grafik Harga Beras Historis</h3>
-          {loading && <p className="text-center text-gray-600">Memuat grafik...</p>}
-          {error && <p className="text-center text-red-500">Error: {error}</p>}
+      {/* --- Area Visualisasi Grafis --- */}
+      <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+        <h3 className="text-lg font-semibold text-gray-800 mb-6 flex items-center">
+          <svg className="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+          Grafik Harga Beras Historis
+        </h3>
+        
+        <div className="h-96 relative">
+          {loading && (
+            <div className="flex items-center justify-center h-full">
+              <div className="flex items-center space-x-2">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                <span className="text-gray-600">Memuat grafik...</span>
+              </div>
+            </div>
+          )}
+          {error && (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <p className="text-red-500 font-medium">Error: {error}</p>
+              </div>
+            </div>
+          )}
           {!loading && !error && filteredData.length === 0 && (
-            <p className="text-center text-gray-500">Tidak ada data untuk grafik dengan filter ini.</p>
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                  </svg>
+                </div>
+                <p className="text-gray-500">Tidak ada data untuk grafik dengan filter ini.</p>
+              </div>
+            </div>
           )}
           {!loading && !error && filteredData.length > 0 && (
-            <canvas ref={chartRef}></canvas>
+            <canvas ref={chartRef} className="w-full h-full"></canvas>
           )}
         </div>
+      </div>
 
-        {/* --- Area Tampilan Data Historis (Tabel dengan Paginasi) --- */}
-        <div className="mt-8 p-5 border border-gray-200 rounded-lg bg-white min-h-[300px] shadow-sm">
-          <h3 className="font-semibold text-lg text-gray-800 mb-4">Tabel Data Historis</h3>
-          {loading && <p className="text-center text-gray-600">Memuat data tabel...</p>}
-          {error && <p className="text-center text-red-500">Error: {error}</p>}
+      {/* --- Area Tampilan Data Historis (Tabel dengan Paginasi) --- */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+        <div className="p-6 border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-800 flex items-center">
+            <svg className="w-5 h-5 text-purple-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-9-4v8m-7 0V4a1 1 0 011-1h16a1 1 0 011 1v16a1 1 0 01-1 1H6a1 1 0 01-1-1V10z" />
+            </svg>
+            Tabel Data Historis
+          </h3>
+        </div>
+
+        <div className="min-h-[400px]">
+          {loading && (
+            <div className="flex items-center justify-center h-96">
+              <div className="flex items-center space-x-2">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                <span className="text-gray-600">Memuat data tabel...</span>
+              </div>
+            </div>
+          )}
+          {error && (
+            <div className="flex items-center justify-center h-96">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <p className="text-red-500 font-medium">Error: {error}</p>
+              </div>
+            </div>
+          )}
           {!loading && !error && filteredData.length === 0 && (
-            <p className="text-center text-gray-500">Tidak ada data yang ditemukan untuk filter ini.</p>
+            <div className="flex items-center justify-center h-96">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                  </svg>
+                </div>
+                <p className="text-gray-500">Tidak ada data yang ditemukan untuk filter ini.</p>
+              </div>
+            </div>
           )}
 
           {!loading && !error && filteredData.length > 0 && (
             <>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                  <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                     <tr>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                         Tanggal
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                         Medium Silinda (Rp/kg)
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                         Premium Silinda (Rp/kg)
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                         Medium Bapanas (Rp/kg)
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                         Premium Bapanas (Rp/kg)
                       </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {/* Perbaikan: currentItems.map sudah benar, pastikan tidak ada tag penutup yang salah */}
-                    {currentItems.map((item) => (
-                      <tr key={item.id}>
+                    {currentItems.map((item, index) => (
+                      <tr key={item.id} className={`hover:bg-gray-50 transition-colors duration-150 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-25'}`}>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {new Date(item.date).toLocaleDateString('id-ID', {
                             year: 'numeric',
@@ -285,49 +376,67 @@ const DataHistoris: React.FC = () => {
                             day: 'numeric',
                           })}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {item.medium_silinda.toLocaleString('id-ID')}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium">
+                          Rp {item.medium_silinda.toLocaleString('id-ID')}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {item.premium_silinda.toLocaleString('id-ID')}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium">
+                          Rp {item.premium_silinda.toLocaleString('id-ID')}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {item.medium_bapanas.toLocaleString('id-ID')}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium">
+                          Rp {item.medium_bapanas.toLocaleString('id-ID')}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {item.premium_bapanas.toLocaleString('id-ID')}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium">
+                          Rp {item.premium_bapanas.toLocaleString('id-ID')}
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
+              
               {/* Kontrol Paginasi */}
-              <div className="flex justify-between items-center mt-4">
-                <button
-                  onClick={handlePrevPage}
-                  disabled={currentPage === 1}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Previous
-                </button>
-                <span className="text-sm text-gray-700">
-                  Halaman {currentPage} dari {totalPages}
-                </span>
-                <button
-                  onClick={handleNextPage}
-                  disabled={currentPage === totalPages}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Next
-                </button>
+              <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={handlePrevPage}
+                      disabled={currentPage === 1}
+                      className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                    >
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                      Previous
+                    </button>
+                    <button
+                      onClick={handleNextPage}
+                      disabled={currentPage === totalPages}
+                      className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                    >
+                      Next
+                      <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </div>
+                  
+                  <div className="flex items-center space-x-4">
+                    <span className="text-sm text-gray-700">
+                      Menampilkan {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, filteredData.length)} dari {filteredData.length} data
+                    </span>
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                      Halaman {currentPage} dari {totalPages}
+                    </span>
+                  </div>
+                </div>
               </div>
             </>
           )}
         </div>
       </div>
     </div>
-  );
+  </div>
+);
 };
 
 export default DataHistoris;
