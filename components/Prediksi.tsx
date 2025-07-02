@@ -174,6 +174,11 @@ const Prediksi = () => {
     return null;
   };
 
+  // Helper function to format jenis beras name
+  const formatJenisBerasName = (jenisBeras: string): string => {
+    return jenisBeras.replace('_', ' ').replace(/\b\w/g, (char: string) => char.toUpperCase());
+  };
+
   const persentaseBesok = hitungPersentasePerubahanBesok();
   const isNaikBesok = persentaseBesok !== null && Number(persentaseBesok) > 0;
   const isTurunBesok = persentaseBesok !== null && Number(persentaseBesok) < 0;
@@ -265,7 +270,7 @@ const Prediksi = () => {
                  <div className="flex w-full md:w-9/10 p-5 border border-gray-200 rounded-xl bg-white shadow-md justify-between items-center">
                     <div>
                         <div className="font-sans text-md text-gray-500 mb-2">
-                            Harga Saat Ini ({jenisBeras.replace('_', ' ').replace(/\b\w/g, char => char.toUpperCase())})
+                            Harga Saat Ini ({formatJenisBerasName(jenisBeras as string)})
                         </div>
                         <div className="font-bold text-2xl text-gray-900">
                             {`Rp ${hargaHariIni[jenisBeras]?.toLocaleString('id-ID')}`}
@@ -354,12 +359,11 @@ const Prediksi = () => {
             {jenisBeras && allHistoricalDataLocal.length > 0 && (
               <PriceChart
                 historicalData={allHistoricalDataLocal}
-                jenisBeras={jenisBeras}
-                predictionTomorrowSeries={prediksiBesokSeries} 
-                predictionNewYearSeries={chartPredictionNewYearSeries} 
-                predictionIdulFitriSeries={chartPredictionIdulFitriSeries} 
-                periodePrediksi={periodePrediksi}
-              />
+                jenisBeras={jenisBeras as string}
+                predictionTomorrowSeries={prediksiBesokSeries}
+                predictionNewYearSeries={chartPredictionNewYearSeries}
+                predictionIdulFitriSeries={chartPredictionIdulFitriSeries}
+                periodePrediksi={periodePrediksi} predictionTomorrow={null}              />
             )}
             
             {/* Pesan jika tidak ada data historis untuk grafik */}
