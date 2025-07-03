@@ -29,7 +29,6 @@ jobs:
     - name: Fetch latest database with wget
       run: |
         wget https://github.com/yuldan14/ricetrend-backend/raw/main/data_harga.json -O ./public/data_harga.json
-        https://github.com/yuldan14/ricetrend-backend/blob/main/data_harga.json
 
     - name: Commit changes
       run: |
