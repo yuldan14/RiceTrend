@@ -1,0 +1,40 @@
+{
+  "name": "beras-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@radix-ui/react-popover": "^1.1.16",
+    "@radix-ui/react-select": "^2.3.0",
+    "@radix-ui/react-tooltip": "^1.2.9",
+    "chart.js": "^4.5.1",
+    "chartjs-plugin-annotation": "^3.1.0",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.4.0",
+    "framer-motion": "^12.40.0",
+    "lucide-react": "^1.18.0",
+    "next": "^16.2.9",
+    "react": "^19.2.7",
+    "react-countup": "^6.5.3",
+    "react-dom": "^19.2.7",
+    "react-hot-toast": "^2.6.0",
+    "recharts": "^3.8.1",
+    "tailwind-merge": "^3.6.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.5",
+    "@tailwindcss/postcss": "^4.3.1",
+    "@types/node": "^25.9.3",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "eslint": "^9.30.0",
+    "eslint-config-next": "^16.2.9",
+    "tailwindcss": "^4.3.1",
+    "typescript": "^6.0.3"
+  }
+}
