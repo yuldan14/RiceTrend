@@ -150,8 +150,8 @@ export function Perbandingan() {
                   <h2 className="text-base font-semibold text-slate-900">Proyeksi Gabungan</h2>
                   <p className="mt-1 text-xs text-muted">Tujuh hari setelah data historis terakhir</p>
                 </div>
-                <div className="mt-5 h-72">
-                  <ResponsiveContainer width="100%" height="100%">
+                <div className="mt-5 h-72 min-w-0">
+                  <ResponsiveContainer width="100%" height={288}>
                     <LineChart data={combined}>
                       <XAxis
                         dataKey="day"

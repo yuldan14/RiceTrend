@@ -3,7 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { format, parseISO } from "date-fns";
 import { Download, Search, SlidersHorizontal } from "lucide-react";
-import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import {
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -51,7 +58,8 @@ export function DataHistoris() {
           setEndDate(data[data.length - 1].date);
         }
       } catch (loadError: unknown) {
-        const message = loadError instanceof Error ? loadError.message : "Data gagal dimuat.";
+        const message =
+          loadError instanceof Error ? loadError.message : "Data gagal dimuat.";
         setError(message);
         notifyError(message);
       } finally {
@@ -105,12 +113,17 @@ export function DataHistoris() {
 
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
   const currentPage = Math.min(page, totalPages);
-  const visibleRows = filteredRows.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const visibleRows = filteredRows.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize,
+  );
   const chartRows = useMemo(
     () =>
       rows
         .filter(
-          (row) => (!startDate || row.date >= startDate) && (!endDate || row.date <= endDate),
+          (row) =>
+            (!startDate || row.date >= startDate) &&
+            (!endDate || row.date <= endDate),
         )
         .slice(-45)
         .map((row) => ({
@@ -179,7 +192,9 @@ export function DataHistoris() {
               </span>
             </label>
             <label className="space-y-2">
-              <span className="block text-xs font-semibold uppercase tracking-wide text-muted">Dari</span>
+              <span className="block text-xs font-semibold uppercase tracking-wide text-muted">
+                Dari
+              </span>
               <input
                 type="date"
                 value={startDate}
@@ -188,7 +203,9 @@ export function DataHistoris() {
               />
             </label>
             <label className="space-y-2">
-              <span className="block text-xs font-semibold uppercase tracking-wide text-muted">Sampai</span>
+              <span className="block text-xs font-semibold uppercase tracking-wide text-muted">
+                Sampai
+              </span>
               <input
                 type="date"
                 value={endDate}
@@ -205,7 +222,7 @@ export function DataHistoris() {
                   setEndDate(rows[rows.length - 1].date);
                 }
               }}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 text-sm font-semibold text-white hover:bg-slate-800"
+              className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 text-sm font-semibold text-white transition hover:bg-brand-600 xl:flex-none"
             >
               <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
               Reset
@@ -215,14 +232,18 @@ export function DataHistoris() {
 
         <section className="rounded-card border border-border bg-white p-5 shadow-card sm:p-6">
           <div>
-            <h2 className="text-base font-semibold text-slate-900">Pergerakan Harga</h2>
-            <p className="mt-1 text-xs text-muted">45 titik terakhir dalam rentang filter</p>
+            <h2 className="text-base font-semibold text-slate-900">
+              Pergerakan Harga
+            </h2>
+            <p className="mt-1 text-xs text-muted">
+              45 titik terakhir dalam rentang filter
+            </p>
           </div>
           {loading ? (
             <Skeleton className="mt-5 h-72 w-full" />
           ) : (
-            <div className="mt-5 h-72">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="mt-5 h-72 min-w-0">
+              <ResponsiveContainer width="100%" height={288}>
                 <LineChart data={chartRows}>
                   <XAxis
                     dataKey="label"
@@ -236,7 +257,9 @@ export function DataHistoris() {
                     tickLine={false}
                     width={50}
                     tick={{ fill: "var(--color-muted)", fontSize: 11 }}
-                    tickFormatter={(value: number) => `${Math.round(value / 1000)}k`}
+                    tickFormatter={(value: number) =>
+                      `${Math.round(value / 1000)}k`
+                    }
                   />
                   <Tooltip />
                   <Line
@@ -306,7 +329,9 @@ export function DataHistoris() {
                     <tr>
                       <th className="px-5 py-3 font-semibold">Tanggal</th>
                       <th className="px-5 py-3 font-semibold">Jenis Beras</th>
-                      <th className="px-5 py-3 text-right font-semibold">Harga</th>
+                      <th className="px-5 py-3 text-right font-semibold">
+                        Harga
+                      </th>
                       <th className="px-5 py-3 font-semibold">Perubahan</th>
                       <th className="px-5 py-3 font-semibold">Sumber</th>
                     </tr>
@@ -314,23 +339,35 @@ export function DataHistoris() {
                   <tbody className="divide-y divide-border">
                     {visibleRows.map((row) => {
                       const variant =
-                        row.change === null ? "neutral" : row.change > 0 ? "up" : row.change < 0 ? "down" : "neutral";
+                        row.change === null
+                          ? "neutral"
+                          : row.change > 0
+                            ? "up"
+                            : row.change < 0
+                              ? "down"
+                              : "neutral";
 
                       return (
                         <tr key={row.id} className="hover:bg-brand-50/50">
                           <td className="whitespace-nowrap px-5 py-3 font-medium text-slate-800">
                             {format(parseISO(row.date), "dd MMM yyyy")}
                           </td>
-                          <td className="whitespace-nowrap px-5 py-3 text-slate-700">{row.label}</td>
+                          <td className="whitespace-nowrap px-5 py-3 text-slate-700">
+                            {row.label}
+                          </td>
                           <td className="whitespace-nowrap px-5 py-3 text-right font-mono font-semibold text-slate-900">
                             {formatCurrency(row.price)}
                           </td>
                           <td className="whitespace-nowrap px-5 py-3">
                             <Badge variant={variant}>
-                              {row.change === null ? "N/A" : `${row.change > 0 ? "+" : ""}${row.change.toFixed(2)}%`}
+                              {row.change === null
+                                ? "N/A"
+                                : `${row.change > 0 ? "+" : ""}${row.change.toFixed(2)}%`}
                             </Badge>
                           </td>
-                          <td className="whitespace-nowrap px-5 py-3 text-muted">{row.source}</td>
+                          <td className="whitespace-nowrap px-5 py-3 text-muted">
+                            {row.source}
+                          </td>
                         </tr>
                       );
                     })}
@@ -341,14 +378,15 @@ export function DataHistoris() {
               <div className="flex flex-col gap-3 border-t border-border bg-surface px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-xs text-muted">
                   Menampilkan {(currentPage - 1) * pageSize + 1}-
-                  {Math.min(currentPage * pageSize, filteredRows.length)} dari {filteredRows.length}
+                  {Math.min(currentPage * pageSize, filteredRows.length)} dari{" "}
+                  {filteredRows.length}
                 </p>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => setPage((value) => Math.max(1, value - 1))}
                     disabled={currentPage === 1}
-                    className="h-9 rounded-xl border border-border bg-white px-3 text-sm font-semibold text-slate-700 disabled:opacity-40"
+                    className="h-9 rounded-xl border border-border bg-white px-3 text-sm font-semibold text-slate-700 disabled:opacity-40 cursor-pointer"
                   >
                     Sebelumnya
                   </button>
@@ -357,9 +395,11 @@ export function DataHistoris() {
                   </span>
                   <button
                     type="button"
-                    onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
+                    onClick={() =>
+                      setPage((value) => Math.min(totalPages, value + 1))
+                    }
                     disabled={currentPage === totalPages}
-                    className="h-9 rounded-xl border border-border bg-white px-3 text-sm font-semibold text-slate-700 disabled:opacity-40"
+                    className="h-9 rounded-xl border border-border bg-white px-3 text-sm font-semibold text-slate-700 disabled:opacity-40 cursor-pointer"
                   >
                     Berikutnya
                   </button>

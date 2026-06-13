@@ -41,8 +41,8 @@ function ForecastTooltip({ active, payload, label }: TooltipContentProps) {
 
 export function ForecastChart({ data }: ForecastChartProps) {
   return (
-    <div className="h-72 w-full" aria-label="Grafik historis dan prediksi tujuh hari">
-      <ResponsiveContainer width="100%" height="100%">
+    <div className="h-72 min-w-0 w-full" aria-label="Grafik historis dan prediksi tujuh hari">
+      <ResponsiveContainer width="100%" height={288}>
         <ComposedChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
           <CartesianGrid stroke="var(--color-border)" strokeDasharray="3 3" vertical={false} />
           <XAxis

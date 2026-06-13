@@ -155,7 +155,7 @@ const PriceChart: React.FC<PriceChartProps> = ({
       <h3 className="text-2xl font-bold mb-6 text-gray-800 text-center">
         Grafik Harga {riceLabel}
       </h3>
-      <ResponsiveContainer width="100%" height="80%">
+      <ResponsiveContainer width="100%" height={320}>
         <LineChart
           data={chartData}
           margin={{

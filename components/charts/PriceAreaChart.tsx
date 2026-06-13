@@ -22,8 +22,8 @@ function AreaTooltip({ active, payload, label }: TooltipContentProps) {
 
 export function PriceAreaChart({ data }: PriceAreaChartProps) {
   return (
-    <div className="h-44 w-full" aria-label="Grafik harga 30 hari">
-      <ResponsiveContainer width="100%" height="100%">
+    <div className="h-44 min-w-0 w-full" aria-label="Grafik harga 30 hari">
+      <ResponsiveContainer width="100%" height={176}>
         <AreaChart data={data} margin={{ top: 8, right: 0, bottom: 0, left: 0 }}>
           <defs>
             <linearGradient id="priceFill" x1="0" y1="0" x2="0" y2="1">

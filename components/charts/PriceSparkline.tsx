@@ -24,8 +24,8 @@ function SparklineTooltip({ active, payload, label }: TooltipContentProps) {
 
 export function PriceSparkline({ data }: PriceSparklineProps) {
   return (
-    <div className="h-12 w-[72px]">
-      <ResponsiveContainer width="100%" height="100%">
+    <div className="h-12 min-w-0 w-[72px]">
+      <ResponsiveContainer width="100%" height={48}>
         <LineChart data={data}>
           <Tooltip content={SparklineTooltip} cursor={false} />
           <Line
