@@ -6,7 +6,7 @@ import { PriceAreaChart } from "@/components/charts/PriceAreaChart";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { formatCurrency, getRiceLabel, type SelectedRiceCategory } from "@/utils/api";
+import { getRiceLabel, type SelectedRiceCategory } from "@/utils/api";
 import { formatPercent, type ChartPoint } from "@/utils/dashboard";
 
 export interface PriceCardProps {

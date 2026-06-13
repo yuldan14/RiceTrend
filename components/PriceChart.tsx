@@ -12,6 +12,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
+import type { TooltipContentProps } from 'recharts';
 import { format, parseISO, addDays, getDate } from 'date-fns'; 
 import { getRiceLabel, type HistoricalPriceData, type SelectedRiceCategory, type SpecialPeriod } from '../utils/api';
 
@@ -125,16 +126,21 @@ const PriceChart: React.FC<PriceChartProps> = ({
   };
 
   // Komponen kustom untuk Tooltip (kotak info saat hover pada grafik)
-  const TooltipContent = ({ active, payload, label }: any) => {
+  const TooltipContent = ({
+    active,
+    payload,
+    label,
+  }: TooltipContentProps) => {
     if (active && payload && payload.length) {
-      const dataPoint = chartData.find(d => d.date === label);
+      const tooltipDate = String(label);
+      const dataPoint = chartData.find(d => d.date === tooltipDate);
       const value = typeof payload[0].value === 'number'
         ? `Rp ${payload[0].value.toLocaleString('id-ID')}`
         : 'N/A';
 
       return (
         <div className="custom-tooltip bg-white p-3 border border-gray-300 rounded shadow-md">
-          <p className="label font-bold text-gray-800">{`Tanggal : ${format(parseISO(label), 'dd MMM yyyy')}`}</p>
+          <p className="label font-bold text-gray-800">{`Tanggal : ${format(parseISO(tooltipDate), 'dd MMM yyyy')}`}</p>
           <p className="intro text-indigo-700">{`Harga : ${value}`}</p>
           {dataPoint?.isPrediction && <p className="desc text-sm text-gray-500">{dataPoint.label}</p>}
         </div>
@@ -175,7 +181,7 @@ const PriceChart: React.FC<PriceChartProps> = ({
             tick={{ fill: '#666', fontSize: 12 }}
             width={100} 
           />
-          <Tooltip content={<TooltipContent />} />
+          <Tooltip content={TooltipContent} />
           <Legend wrapperStyle={{ paddingTop: '20px' }} />
           <Line
             type="monotone"
@@ -183,7 +189,7 @@ const PriceChart: React.FC<PriceChartProps> = ({
             stroke="#6366f1" 
             strokeWidth={2}
             name={`Harga ${riceLabel}`}
-            dot={({ cx, cy, stroke, key, payload }) => {
+            dot={({ cx, cy, key, payload }) => {
                 const dateObj = parseISO(payload.date);
                 // Tampilkan dot hanya jika tanggalnya adalah tanggal 1 setiap bulan
                 if (getDate(dateObj) === 1) { 

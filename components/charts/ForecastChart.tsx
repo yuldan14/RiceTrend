@@ -11,8 +11,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { TooltipProps } from "recharts";
-import type { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
+import type { TooltipContentProps } from "recharts";
 import { formatCurrency } from "@/utils/api";
 import type { ForecastPoint } from "@/utils/dashboard";
 
@@ -20,7 +19,7 @@ export interface ForecastChartProps {
   data: ForecastPoint[];
 }
 
-function ForecastTooltip({ active, payload, label }: TooltipProps<ValueType, NameType>) {
+function ForecastTooltip({ active, payload, label }: TooltipContentProps) {
   if (!active || !payload?.length) return null;
 
   const values = payload.filter(
@@ -61,7 +60,7 @@ export function ForecastChart({ data }: ForecastChartProps) {
             tickFormatter={(value: number) => `${Math.round(value / 1000)}k`}
             domain={["dataMin - 300", "dataMax + 300"]}
           />
-          <Tooltip content={<ForecastTooltip />} />
+          <Tooltip content={ForecastTooltip} />
           <Area
             type="monotone"
             dataKey="upper"

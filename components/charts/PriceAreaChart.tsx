@@ -1,8 +1,7 @@
 "use client";
 
 import { Area, AreaChart, ResponsiveContainer, Tooltip } from "recharts";
-import type { TooltipProps } from "recharts";
-import type { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
+import type { TooltipContentProps } from "recharts";
 import { formatCurrency } from "@/utils/api";
 import type { ChartPoint } from "@/utils/dashboard";
 
@@ -10,7 +9,7 @@ export interface PriceAreaChartProps {
   data: ChartPoint[];
 }
 
-function AreaTooltip({ active, payload, label }: TooltipProps<ValueType, NameType>) {
+function AreaTooltip({ active, payload, label }: TooltipContentProps) {
   if (!active || !payload?.length) return null;
 
   return (
@@ -32,7 +31,7 @@ export function PriceAreaChart({ data }: PriceAreaChartProps) {
               <stop offset="100%" stopColor="var(--color-brand-500)" stopOpacity={0.02} />
             </linearGradient>
           </defs>
-          <Tooltip content={<AreaTooltip />} cursor={{ stroke: "var(--color-border)" }} />
+          <Tooltip content={AreaTooltip} cursor={{ stroke: "var(--color-border)" }} />
           <Area
             type="monotone"
             dataKey="value"
