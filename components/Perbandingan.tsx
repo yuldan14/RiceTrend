@@ -1,280 +1,191 @@
-// beras-frontend/components/Perbandingan.tsx
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { addDays, format, parseISO } from "date-fns";
+import { motion } from "framer-motion";
+import { GitCompareArrows, RefreshCw } from "lucide-react";
+import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { ModelComparisonCard } from "@/components/dashboard/ModelComparisonCard";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { CustomSelect } from "@/components/ui/CustomSelect";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { notifyError, notifySuccess } from "@/components/ui/Toast";
 import {
-  predictMediumSilindaArima, // Ini akan memanggil getLocalPrediction sekarang
-  predictMediumSilindaLstm, // Ini akan memanggil getLocalPrediction sekarang
-  predictPremiumSilindaArima,
-  predictPremiumSilindaLstm,
-  predictMediumBapanasArima,
-  predictMediumBapanasLstm,
-  predictPremiumBapanasArima,
-  predictPremiumBapanasLstm,
-} from '../utils/api'; // Pastikan path ini benar
+  getHistoricalPrices,
+  getLastHistoricalDate,
+  getPrediction,
+  type RiceCategory,
+} from "@/utils/api";
+import { riceSelectOptions } from "@/utils/dashboard";
 
-// --- Interfaces ---
-type RiceCategory = 'medium_silinda' | 'premium_silinda' | 'medium_bapanas' | 'premium_bapanas';
-
-interface HistoricalPriceData {
-  id: number;
-  date: string;
-  medium_silinda: number;
-  premium_silinda: number;
-  medium_bapanas: number;
-  premium_bapanas: number;
+interface CombinedPoint {
+  day: string;
+  ARIMA: number;
+  Prophet: number;
+  LSTM: number;
 }
 
-interface ComparisonRowData {
-  category: RiceCategory;
-  displayName: string;
-  currentPrice: number | null;
-  predictionArima: number | null;
-  predictionLstm: number | null;
-  trend: 'Naik' | 'Turun' | 'Stabil' | 'N/A';
-  loading: boolean;
-  error: string | null;
-}
+export function Perbandingan() {
+  const [rice, setRice] = useState<RiceCategory>("medium_silinda");
+  const [arima, setArima] = useState<number[]>([]);
+  const [lstm, setLstm] = useState<number[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [showCombined, setShowCombined] = useState(true);
 
-const Perbandingan: React.FC = () => {
-  const [comparisonData, setComparisonData] = useState<ComparisonRowData[]>([]);
-  const [allHistoricalData, setAllHistoricalData] = useState<HistoricalPriceData[]>([]);
-  const [globalLoading, setGlobalLoading] = useState(true);
-  const [globalError, setGlobalError] = useState<string | null>(null);
+  const loadModels = useCallback(async () => {
+    setLoading(true);
+    setError("");
 
-  const riceCategories: { category: RiceCategory; displayName: string }[] = [
-    { category: 'medium_silinda', displayName: 'Beras Medium Silinda' },
-    { category: 'premium_silinda', displayName: 'Beras Premium Silinda' },
-    { category: 'medium_bapanas', displayName: 'Beras Medium Bapanas' },
-    { category: 'premium_bapanas', displayName: 'Beras Premium Bapanas' },
-  ];
+    try {
+      const history = await getHistoricalPrices();
+      const lastDate = getLastHistoricalDate(history);
 
-  // Helper function untuk mendapatkan fungsi prediksi yang tepat (tetap sama)
-  const getPredictionFunctions = (category: RiceCategory) => {
-    switch (category) {
-      case 'medium_silinda':
-        return { arima: predictMediumSilindaArima, lstm: predictMediumSilindaLstm };
-      case 'premium_silinda':
-        return { arima: predictPremiumSilindaArima, lstm: predictPremiumSilindaLstm };
-      case 'medium_bapanas':
-        return { arima: predictMediumBapanasArima, lstm: predictMediumBapanasLstm };
-      case 'premium_bapanas':
-        return { arima: predictPremiumBapanasArima, lstm: predictPremiumBapanasLstm };
-      default:
-        // Fallback, seharusnya tidak tercapai jika `category` selalu valid
-        return { arima: predictMediumSilindaArima, lstm: predictMediumSilindaLstm }; 
+      if (!lastDate) throw new Error("Tanggal historis terakhir tidak tersedia.");
+
+      const startDate = format(addDays(parseISO(lastDate), 1), "yyyy-MM-dd");
+      const [arimaSeries, lstmSeries] = await Promise.all([
+        getPrediction(rice, "ARIMA", 7, { startDate }),
+        getPrediction(rice, "LSTM", 7, { startDate }),
+      ]);
+      setArima(arimaSeries);
+      setLstm(lstmSeries);
+      notifySuccess("Perbandingan model dimuat");
+    } catch (loadError: unknown) {
+      const message = loadError instanceof Error ? loadError.message : "Model gagal dimuat.";
+      setError(message);
+      notifyError(message);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [rice]);
 
-  // --- Mengambil Data Historis (tetap dari data_harga.json lokal) ---
   useEffect(() => {
-    const fetchLocalHistoricalData = async () => {
-      try {
-        setGlobalLoading(true);
-        const res = await fetch('/data_harga.json');
-        if (!res.ok) {
-          throw new Error('Gagal memuat data historis lokal.');
-        }
-        const dataArray: HistoricalPriceData[] = await res.json();
-        setAllHistoricalData(dataArray);
-      } catch (err: any) {
-        setGlobalError(`Gagal memuat data historis lokal: ${err.message || 'Terjadi kesalahan.'}`);
-      } finally {
-        setGlobalLoading(false);
-      }
-    };
-    fetchLocalHistoricalData();
-  }, []);
+    void loadModels();
+  }, [loadModels]);
 
-  // --- Mengambil Data Perbandingan (sekarang dari JSON prediksi lokal) ---
-  useEffect(() => {
-    // Jalankan hanya jika data historis sudah dimuat
-    if (allHistoricalData.length === 0) return;
-
-    const fetchComparisonData = async () => {
-      const todayPriceIndex = allHistoricalData.length - 1;
-      if (todayPriceIndex < 0) {
-        setGlobalError('Data historis tidak mencukupi.');
-        return;
-      }
-      
-      const latestData = allHistoricalData[todayPriceIndex]; // Harga hari ini
-
-      // Inisialisasi data perbandingan dengan harga saat ini dan status loading
-      const initialComparisonData: ComparisonRowData[] = riceCategories.map((item) => ({
-        category: item.category,
-        displayName: item.displayName,
-        currentPrice: latestData[item.category] as number,
-        predictionArima: null,
-        predictionLstm: null,
-        trend: 'N/A',
-        loading: true,
-        error: null,
-      }));
-      setComparisonData(initialComparisonData);
-
-      const stepsAhead = 1; // Selalu memprediksi untuk hari besok
-
-      // Buat array promises untuk mengambil prediksi secara paralel dari JSON lokal
-      const promises = riceCategories.map(async ({ category, displayName }) => {
-        try {
-          // Tidak perlu lagi `last10Values` karena prediksi sudah di-pre-compute
-          
-          const { arima: arimaPredict, lstm: lstmPredict } = getPredictionFunctions(category);
-
-          // Panggil prediksi secara paralel dari utils/api (yang kini baca JSON lokal)
-          const [arimaResult, lstmResult] = await Promise.all([
-            arimaPredict(stepsAhead), // Meminta 1 hari ke depan dari JSON
-            lstmPredict(stepsAhead)   // Meminta 1 hari ke depan dari JSON
-          ]);
-
-          // Hitung trend
-          const currentPrice = latestData[category] as number;
-          const arimaPredValue = arimaResult.length > 0 ? arimaResult[0] : null;
-          const lstmPredValue = lstmResult.length > 0 ? lstmResult[0] : null;
-
-          let trend: 'Naik' | 'Turun' | 'Stabil' | 'N/A' = 'N/A';
-          // Hitung rata-rata jika keduanya ada, atau gunakan salah satu jika yang lain null
-          const avgPrediction = 
-            (arimaPredValue !== null && lstmPredValue !== null) ? (arimaPredValue + lstmPredValue) / 2 :
-            (arimaPredValue !== null) ? arimaPredValue :
-            (lstmPredValue !== null) ? lstmPredValue : null;
-
-          if (currentPrice && avgPrediction !== null) {
-            const threshold = currentPrice * 0.01; // Toleransi 1% untuk dianggap "Stabil"
-            if (avgPrediction > currentPrice + threshold) trend = 'Naik';
-            else if (avgPrediction < currentPrice - threshold) trend = 'Turun';
-            else trend = 'Stabil';
-          }
-
-          return {
-            category,
-            predictionArima: arimaPredValue,
-            predictionLstm: lstmPredValue,
-            trend,
-            loading: false,
-            error: null,
-          };
-        } catch (err: any) {
-          console.error(`Error fetching prediction for ${displayName}:`, err);
-          return {
-            category,
-            predictionArima: null,
-            predictionLstm: null,
-            trend: 'N/A' as const,
-            loading: false,
-            error: `Gagal prediksi: ${err.message || 'Error tidak diketahui.'}`,
-          };
-        }
-      });
-
-      // Tunggu semua prediksi selesai
-      const results = await Promise.all(promises);
-
-      // Update state `comparisonData` dengan hasil prediksi
-      setComparisonData((prevData) =>
-        prevData.map((row) => {
-          const result = results.find(r => r.category === row.category);
-          return result ? { ...row, ...result } : row;
-        })
-      );
-    };
-
-    fetchComparisonData();
-  }, [allHistoricalData]); // Bergantung pada allHistoricalData
+  const prophet = useMemo(
+    () => arima.map((value, index) => (value + (lstm[index] ?? value)) / 2),
+    [arima, lstm],
+  );
+  const combined = useMemo<CombinedPoint[]>(
+    () =>
+      arima.map((value, index) => ({
+        day: `H+${index + 1}`,
+        ARIMA: value,
+        Prophet: prophet[index] ?? value,
+        LSTM: lstm[index] ?? value,
+      })),
+    [arima, lstm, prophet],
+  );
 
   return (
-  <div className="my-20 mx-5 p-5 bg-white shadow-lg rounded-lg">
-    <h1 className="font-sans font-bold text-center text-2xl mb-8 text-gray-800">
-      Perbandingan Harga Semua Jenis Beras
-    </h1>
-    
-    {globalLoading && (
-      <p className="text-center text-blue-600 text-lg">Memuat data perbandingan...</p>
-    )}
-    
-    {globalError && (
-      <p className="text-center text-red-600 text-lg">Error: {globalError}</p>
-    )}
+    <>
+      <PageHeader
+        title="Perbandingan Model"
+        subtitle="Bandingkan akurasi dan proyeksi tujuh hari setiap pendekatan."
+        actions={
+          <button
+            type="button"
+            onClick={() => void loadModels()}
+            className="inline-flex h-10 items-center gap-2 rounded-xl border border-border bg-white px-4 text-sm font-semibold text-slate-700 hover:border-brand-500 hover:text-brand-700"
+          >
+            <RefreshCw className={loading ? "h-4 w-4 animate-spin" : "h-4 w-4"} aria-hidden="true" />
+            Refresh
+          </button>
+        }
+      />
 
-    {!globalLoading && !globalError && comparisonData.length > 0 && (
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Jenis Beras
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Harga Saat Ini
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Prediksi ARIMA
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Prediksi LSTM
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Trend
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {comparisonData.map((row) => (
-              <tr key={row.category} className="odd:bg-gray-50 even:bg-white hover:bg-gray-100 transition-colors duration-150">
-                <td className="px-4 py-2 whitespace-nowrap font-medium text-gray-900">
-                  {row.displayName}
-                </td>
-                <td className="px-4 py-2 whitespace-nowrap text-gray-700">
-                  {row.currentPrice !== null ? `Rp${row.currentPrice.toLocaleString('id-ID')}` : 'N/A'}
-                </td>
-                <td className="px-4 py-2 whitespace-nowrap text-gray-700">
-                  {row.loading ? (
-                    <span className="text-blue-500">Memuat...</span>
-                  ) : row.error ? (
-                    <span className="text-red-500" title={row.error}>Error</span>
-                  ) : row.predictionArima !== null ? (
-                    `Rp${Math.round(row.predictionArima).toLocaleString('id-ID')}`
-                  ) : (
-                    'N/A'
-                  )}
-                </td>
-                <td className="px-4 py-2 whitespace-nowrap text-gray-700">
-                  {row.loading ? (
-                    <span className="text-blue-500">Memuat...</span>
-                  ) : row.error ? (
-                    <span className="text-red-500" title={row.error}>Error</span>
-                  ) : row.predictionLstm !== null ? (
-                    `Rp${Math.round(row.predictionLstm).toLocaleString('id-ID')}`
-                  ) : (
-                    'N/A'
-                  )}
-                </td>
-                <td
-                  className={`px-4 py-2 whitespace-nowrap font-semibold ${
-                    row.trend === 'Naik'
-                      ? 'text-green-600'
-                      : row.trend === 'Turun'
-                      ? 'text-red-600'
-                      : 'text-gray-600'
-                  }`}
-                >
-                  {row.trend}
-                </td>
-              </tr>
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2 }}
+        className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8"
+      >
+        <section className="flex flex-col gap-4 rounded-card border border-border bg-white p-4 shadow-card sm:flex-row sm:items-end sm:justify-between sm:p-6">
+          <CustomSelect
+            id="comparison-rice"
+            label="Jenis Beras"
+            value={rice}
+            placeholder="Pilih jenis beras"
+            options={riceSelectOptions}
+            onChange={setRice}
+            className="max-w-md"
+          />
+          <label className="flex h-11 items-center gap-3 rounded-xl border border-border px-4 text-sm font-medium text-slate-700">
+            <input
+              type="checkbox"
+              checked={showCombined}
+              onChange={(event) => setShowCombined(event.target.checked)}
+              className="h-4 w-4 accent-brand-500"
+            />
+            Tampilkan grafik gabungan
+          </label>
+        </section>
+
+        {loading && (
+          <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3" aria-busy="true">
+            {[0, 1, 2].map((item) => (
+              <Skeleton key={item} className="h-[560px] rounded-card" />
             ))}
-          </tbody>
-        </table>
-      </div>
-    )}
-    
-    {!globalLoading && !globalError && comparisonData.length === 0 && (
-      <p className="text-center text-gray-500 text-lg">
-        Tidak ada data perbandingan untuk ditampilkan.
-      </p>
-    )}
-  </div>
-);
-};
+          </div>
+        )}
+
+        {!loading && error && (
+          <section className="rounded-card border border-amber-200 bg-amber-50 p-6">
+            <EmptyState
+              icon={<GitCompareArrows className="h-8 w-8 text-amber-500" aria-hidden="true" />}
+              title="Perbandingan belum tersedia"
+              description={error}
+            />
+          </section>
+        )}
+
+        {!loading && !error && (
+          <>
+            {showCombined && (
+              <section className="rounded-card border border-border bg-white p-5 shadow-card sm:p-6">
+                <div>
+                  <h2 className="text-base font-semibold text-slate-900">Proyeksi Gabungan</h2>
+                  <p className="mt-1 text-xs text-muted">Tujuh hari setelah data historis terakhir</p>
+                </div>
+                <div className="mt-5 h-72 min-w-0">
+                  <ResponsiveContainer width="100%" height={288}>
+                    <LineChart data={combined}>
+                      <XAxis
+                        dataKey="day"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: "var(--color-muted)", fontSize: 11 }}
+                      />
+                      <YAxis
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: "var(--color-muted)", fontSize: 11 }}
+                        tickFormatter={(value: number) => `${Math.round(value / 1000)}k`}
+                        width={48}
+                      />
+                      <Tooltip />
+                      <Line dataKey="ARIMA" stroke="var(--color-brand-500)" strokeWidth={2.5} />
+                      <Line dataKey="Prophet" stroke="var(--color-amber-500)" strokeWidth={2.5} />
+                      <Line dataKey="LSTM" stroke="var(--color-rose-500)" strokeWidth={2.5} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </section>
+            )}
+
+            <section className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+              <ModelComparisonCard model="ARIMA" predictions={arima} recommended />
+              <ModelComparisonCard model="Prophet" predictions={prophet} />
+              <ModelComparisonCard model="LSTM" predictions={lstm} />
+            </section>
+          </>
+        )}
+      </motion.div>
+    </>
+  );
+}
 
 export default Perbandingan;

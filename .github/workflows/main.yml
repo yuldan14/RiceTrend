@@ -1,41 +1,100 @@
-name: Convert to JSON and Fetch Database
+name: Sync Backend Dataset
 
 on:
   schedule:
-    - cron: '30 6 * * *' # Every day at 06:30 UTC (13:30 WIB)
+    - cron: "30 6 * * *" # Daily at 06:30 UTC (13:30 WIB), after backend refresh.
   workflow_dispatch:
+    inputs:
+      backend_ref:
+        description: Backend branch, tag, or commit to sync
+        required: false
+        default: main
+  repository_dispatch:
+    types: [backend-data-updated]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-backend-dataset
+  cancel-in-progress: false
 
 jobs:
-  fetch_and_convert:
+  sync:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BACKEND_REPOSITORY: yuldan14/ricetrend-backend
+      BACKEND_REF: ${{ github.event.client_payload.backend_sha || inputs.backend_ref || 'main' }}
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      - name: Checkout frontend
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10
 
-    - name: Install dependencies
-      run: |
-        pip install -r requirements.txt
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
 
-    - name: Remove old dataset
-      run: |
-        rm -f ./public/data_harga.json
+      - name: Download backend dataset
+        shell: bash
+        run: |
+          dataset_url="https://raw.githubusercontent.com/${BACKEND_REPOSITORY}/${BACKEND_REF}/data_harga.json"
+          curl --fail --location --retry 3 --retry-delay 5 \
+            "$dataset_url" \
+            --output "$RUNNER_TEMP/data_harga.json"
 
-    - name: Fetch latest database with wget
-      run: |
-        wget https://github.com/yuldan14/ricetrend-backend/raw/main/data_harga.json -O ./public/data_harga.json
+      - name: Validate dataset
+        shell: bash
+        run: |
+          jq -e '
+            type == "array" and
+            length > 0 and
+            all(.[];
+              has("id") and
+              has("date") and
+              has("medium_silinda") and
+              has("premium_silinda") and
+              has("medium_bapanas") and
+              has("premium_bapanas") and
+              (.date | type == "string" and length > 0)
+            )
+          ' "$RUNNER_TEMP/data_harga.json" > /dev/null
+          mv "$RUNNER_TEMP/data_harga.json" public/data_harga.json
 
-    - name: Commit changes
-      run: |
-        git config --global user.name "github-actions[bot]"
-        git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-        git add ./public/data_harga.json
-        git commit -m "Update JSON data from database [skip ci]"
-        git push
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint frontend
+        run: pnpm lint
+
+      - name: Check TypeScript
+        run: pnpm exec tsc --noEmit
+
+      - name: Build frontend
+        run: pnpm build
+
+      - name: Commit synced dataset
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- public/data_harga.json
+
+          if git diff --cached --quiet; then
+            echo "Frontend dataset already matches backend ${BACKEND_REF}."
+            exit 0
+          fi
+
+          git commit -m "chore(data): sync backend dataset [skip ci]"
+          git pull --rebase origin "$GITHUB_REF_NAME"
+          git push origin "HEAD:$GITHUB_REF_NAME"

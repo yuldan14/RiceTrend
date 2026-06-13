@@ -1,181 +1,107 @@
 // beras-frontend/components/NewYearPred.tsx
-'use client'; 
-import React, { useState, useEffect } from 'react';
+'use client';
+
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-  predictMediumSilindaArima,
-  predictMediumSilindaLstm,
-  predictPremiumSilindaArima,
-  predictPremiumSilindaLstm,
-  predictMediumBapanasArima,
-  predictMediumBapanasLstm,
-  predictPremiumBapanasArima,
-  predictPremiumBapanasLstm,
-} from '../utils/api'; 
-import { format, parseISO, addDays } from 'date-fns'; // Impor date-fns untuk membantu tanggal
-
-
-type HargaData = {
-  [key: string]: number | undefined;
-};
+  calculateChangePercent,
+  formatCurrency,
+  getDaysFromBaseToTarget,
+  getNextNewYearDate,
+  getPredictionSeriesToDate,
+  type HargaData,
+  type PredictionModel,
+  type SelectedRiceCategory,
+} from '../utils/api';
 
 interface NewYearPredProps {
-  jenisBeras: keyof HargaData;
-  model: 'ARIMA' | 'LSTM';
+  jenisBeras: SelectedRiceCategory;
+  model: PredictionModel;
   hargaHariIni: HargaData;
-  // Ubah tipe onPredictionResult untuk mengirim array prediksi, bukan hanya satu angka
-  onPredictionResult?: (predictions: number[] | null) => void; 
+  baseDate: string | null;
+  onPredictionResult?: (predictions: number[] | null) => void;
 }
 
 const NewYearPred: React.FC<NewYearPredProps> = ({
   jenisBeras,
   model,
   hargaHariIni,
+  baseDate,
   onPredictionResult,
 }) => {
-  // Ubah state ini untuk menyimpan seluruh deret prediksi
   const [prediksiTahunBaruSeries, setPrediksiTahunBaruSeries] = useState<number[] | null>(null);
   const [loadingTahunBaru, setLoadingTahunBaru] = useState(false);
   const [errorTahunBaru, setErrorTahunBaru] = useState('');
 
-  // Fungsi untuk menghitung berapa hari lagi menuju Tahun Baru berikutnya.
-  const hitungHariKeTahunBaru = () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); 
-    let newYearDate = new Date(today.getFullYear() + 1, 0, 1); 
+  const targetDate = useMemo(
+    () => (baseDate ? getNextNewYearDate(baseDate) : null),
+    [baseDate],
+  );
 
-    if (newYearDate.getTime() <= today.getTime()) {
-      newYearDate = new Date(today.getFullYear() + 2, 0, 1);
-    }
-    
-    const diffTime = newYearDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    return diffDays;
-  };
-
-  // Fungsi untuk mengambil prediksi Tahun Baru dari API (sekarang dari JSON lokal).
   useEffect(() => {
     const fetchPredictionTahunBaru = async () => {
-      if (!jenisBeras) {
+      if (!jenisBeras || !baseDate || !targetDate) {
         setPrediksiTahunBaruSeries(null);
-        setErrorTahunBaru('Pilih jenis beras untuk melihat prediksi.');
-        if (onPredictionResult) onPredictionResult(null); 
+        setErrorTahunBaru('Pilih jenis beras dan tunggu data harga dimuat.');
+        onPredictionResult?.(null);
         setLoadingTahunBaru(false);
         return;
       }
 
       setLoadingTahunBaru(true);
       setErrorTahunBaru('');
-      setPrediksiTahunBaruSeries(null); // Reset deret
-      if (onPredictionResult) onPredictionResult(null); 
+      setPrediksiTahunBaruSeries(null);
+      onPredictionResult?.(null);
 
       try {
-        const stepsToNewYear = hitungHariKeTahunBaru();
-        let predictionResult: number[] = [];
-
-        switch (jenisBeras) {
-          case 'medium_silinda':
-            predictionResult =
-              model === 'ARIMA'
-                ? await predictMediumSilindaArima(stepsToNewYear)
-                : await predictMediumSilindaLstm(stepsToNewYear);
-            break;
-          case 'premium_silinda':
-            predictionResult =
-              model === 'ARIMA'
-                ? await predictPremiumSilindaArima(stepsToNewYear)
-                : await predictPremiumSilindaLstm(stepsToNewYear);
-            break;
-          case 'medium_bapanas':
-            predictionResult =
-              model === 'ARIMA'
-                ? await predictMediumBapanasArima(stepsToNewYear)
-                : await predictMediumBapanasLstm(stepsToNewYear);
-            break;
-          case 'premium_bapanas':
-            predictionResult =
-              model === 'ARIMA'
-                ? await predictPremiumBapanasArima(stepsToNewYear)
-                : await predictPremiumBapanasLstm(stepsToNewYear);
-            break;
-          default:
-            throw new Error('Jenis beras tidak valid.');
-        }
+        const predictionResult = await getPredictionSeriesToDate(
+          jenisBeras,
+          model,
+          baseDate,
+          targetDate,
+        );
 
         if (predictionResult.length > 0) {
-          setPrediksiTahunBaruSeries(predictionResult); // Simpan seluruh deret
-          if (onPredictionResult) onPredictionResult(predictionResult); // Kirim seluruh deret ke parent
+          setPrediksiTahunBaruSeries(predictionResult);
+          onPredictionResult?.(predictionResult);
         } else {
           setErrorTahunBaru('API tidak mengembalikan hasil prediksi.');
-          if (onPredictionResult) onPredictionResult(null);
+          onPredictionResult?.(null);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error fetching new year prediction:', err);
-        setErrorTahunBaru(`Gagal mengambil prediksi tahun baru: ${err.message || 'Terjadi kesalahan tidak diketahui.'}`);
-        if (onPredictionResult) onPredictionResult(null);
+        const message = err instanceof Error ? err.message : 'Terjadi kesalahan tidak diketahui.';
+        setErrorTahunBaru(`Gagal mengambil prediksi tahun baru: ${message}`);
+        onPredictionResult?.(null);
       } finally {
         setLoadingTahunBaru(false);
       }
     };
 
     fetchPredictionTahunBaru();
-  }, [jenisBeras, model]); 
+  }, [jenisBeras, model, baseDate, targetDate, onPredictionResult]);
 
-  // Fungsi untuk menghitung persentase perubahan harga (menggunakan nilai terakhir dari deret prediksi)
-  const hitungPersentasePerubahanTahunBaru = () => {
-    const prediksiAkhir = prediksiTahunBaruSeries && prediksiTahunBaruSeries.length > 0
-      ? prediksiTahunBaruSeries[prediksiTahunBaruSeries.length - 1]
-      : null;
-
-    if (
-      jenisBeras &&
-      prediksiAkhir !== null &&
-      hargaHariIni[jenisBeras] !== undefined &&
-      hargaHariIni[jenisBeras] !== 0
-    ) {
-      const hargaSekarang = hargaHariIni[jenisBeras] as number;
-      const perubahan = ((prediksiAkhir - hargaSekarang) / hargaSekarang) * 100;
-      return perubahan.toFixed(2);
-    }
-    return null;
-  };
-
-  const getTahunDepan = () => {
-    const today = new Date();
-    const newYearDateThisCycle = new Date(today.getFullYear() + 1, 0, 1);
-    if (newYearDateThisCycle.getTime() <= today.getTime()) {
-      return today.getFullYear() + 2;
-    }
-    return today.getFullYear() + 1;
-  };
-
-  const getHariTersisa = () => {
-    const days = hitungHariKeTahunBaru();
-    return days > 0 ? days : 0;
-  };
-
-  const persentaseTahunBaru = hitungPersentasePerubahanTahunBaru();
-  const isNaikTahunBaru = persentaseTahunBaru !== null && Number(persentaseTahunBaru) > 0;
-  const isTurunTahunBaru = persentaseTahunBaru !== null && Number(persentaseTahunBaru) < 0;
-
-  // Nilai yang ditampilkan di kotak adalah prediksi terakhir dari deret
   const displayPrediksiTahunBaru = prediksiTahunBaruSeries && prediksiTahunBaruSeries.length > 0
     ? prediksiTahunBaruSeries[prediksiTahunBaruSeries.length - 1]
     : null;
+  const persentaseTahunBaru = jenisBeras
+    ? calculateChangePercent(hargaHariIni[jenisBeras], displayPrediksiTahunBaru)
+    : null;
+  const isNaikTahunBaru = persentaseTahunBaru !== null && Number(persentaseTahunBaru) > 0;
+  const isTurunTahunBaru = persentaseTahunBaru !== null && Number(persentaseTahunBaru) < 0;
+  const hariTersisa = baseDate && targetDate ? getDaysFromBaseToTarget(baseDate, targetDate) : 0;
 
   return (
     <div className="w-full md:w-9/10 p-5 border border-gray-200 rounded-xl bg-white flex justify-between items-center">
       <div>
         <div className="font-sans text-md text-gray-500 mb-2">
-          Prediksi Harga 1 Januari {getTahunDepan()} Model {model}
+          Prediksi Harga 1 Januari {targetDate ? targetDate.getFullYear() : 'Mendatang'} Model {model}
         </div>
         <div className="font-bold text-2xl text-gray-900">
           {loadingTahunBaru && 'Memuat...'}
           {errorTahunBaru && <span className="text-red-500">{errorTahunBaru}</span>}
-          {!loadingTahunBaru &&
-            !errorTahunBaru &&
-            displayPrediksiTahunBaru !== null &&
-            `Rp ${displayPrediksiTahunBaru.toLocaleString('id-ID')}`}
+          {!loadingTahunBaru && !errorTahunBaru && displayPrediksiTahunBaru !== null && (
+            formatCurrency(displayPrediksiTahunBaru)
+          )}
           {!loadingTahunBaru && !errorTahunBaru && displayPrediksiTahunBaru === null && '-'}
         </div>
 
@@ -190,7 +116,7 @@ const NewYearPred: React.FC<NewYearPredProps> = ({
                   : 'text-gray-600'
               }`}
             >
-              {isNaikTahunBaru && '↗ +'}{isTurunTahunBaru && '↘ '}{persentaseTahunBaru}% dari hari ini
+              {isNaikTahunBaru && '+'}{persentaseTahunBaru}% dari hari ini
             </p>
           ) : (
             <p className="text-gray-500 text-sm font-sans">
@@ -198,9 +124,9 @@ const NewYearPred: React.FC<NewYearPredProps> = ({
             </p>
           )}
 
-          {jenisBeras && getHariTersisa() > 0 && (
+          {jenisBeras && hariTersisa > 0 && (
             <p className="text-xs text-gray-400 font-sans">
-              {getHariTersisa()} hari lagi menuju tahun baru
+              {hariTersisa} hari dari data terakhir menuju tahun baru
             </p>
           )}
         </div>

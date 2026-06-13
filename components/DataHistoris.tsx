@@ -1,442 +1,416 @@
-'use client';
-import React, { useState, useEffect, useRef } from 'react';
-import Chart, { TooltipItem } from 'chart.js/auto'; // Import Chart dan TooltipItem
+"use client";
 
-// --- Interface untuk Struktur Data ---
-interface PriceData {
-  id: number;
+import { useEffect, useMemo, useState } from "react";
+import { format, parseISO } from "date-fns";
+import { Download, Search, SlidersHorizontal } from "lucide-react";
+import {
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Badge } from "@/components/ui/Badge";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { notifyError, notifySuccess } from "@/components/ui/Toast";
+import {
+  RICE_CATEGORIES,
+  formatCurrency,
+  getHistoricalPrices,
+  type HistoricalPriceData,
+  type RiceCategory,
+} from "@/utils/api";
+import { exportCsv } from "@/utils/dashboard";
+
+interface HistoricalTableRow {
+  id: string;
   date: string;
-  medium_silinda: number;
-  premium_silinda: number;
-  medium_bapanas: number;
-  premium_bapanas: number;
+  category: RiceCategory;
+  label: string;
+  price: number;
+  change: number | null;
+  source: string;
 }
 
-const DataHistoris: React.FC = () => {
-  // --- States ---
-  const [rawData, setRawData] = useState<PriceData[]>([]);
-  const [filteredData, setFilteredData] = useState<PriceData[]>([]);
-  const [startDate, setStartDate] = useState<string>('');
-  const [endDate, setEndDate] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+const pageSize = 12;
 
-  // States untuk Paginasi
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const itemsPerPage = 5; // Menampilkan 5 item per halaman
+export function DataHistoris() {
+  const [rows, setRows] = useState<HistoricalPriceData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [query, setQuery] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [page, setPage] = useState(1);
 
-  // Ref untuk elemen canvas grafik
-  const chartRef = useRef<HTMLCanvasElement>(null);
-  const chartInstance = useRef<Chart | null>(null); // Menyimpan instance Chart.js
-
-  // --- useEffect untuk Mengambil Data ---
   useEffect(() => {
-    const fetchData = async () => {
+    const loadData = async () => {
+      setLoading(true);
+
       try {
-        setLoading(true);
-        const response = await fetch('/data_harga.json');
-        if (!response.ok) {
-          throw new Error(`Gagal mengambil data: Status ${response.status}`);
+        const data = await getHistoricalPrices();
+        setRows(data);
+        if (data.length > 0) {
+          setStartDate(data[Math.max(0, data.length - 90)].date);
+          setEndDate(data[data.length - 1].date);
         }
-        const jsonData: PriceData[] = await response.json();
-        // Urutkan data berdasarkan tanggal dari yang terbaru ke terlama saat pertama kali dimuat
-        const sortedData = jsonData.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        setRawData(sortedData);
-        setFilteredData(sortedData); // Awalnya, tampilkan semua data yang diambil
-      } catch (err) {
-        if (err instanceof Error) {
-          setError(`Terjadi kesalahan: ${err.message}`);
-        } else {
-          setError('Terjadi kesalahan yang tidak diketahui.');
-        }
+      } catch (loadError: unknown) {
+        const message =
+          loadError instanceof Error ? loadError.message : "Data gagal dimuat.";
+        setError(message);
+        notifyError(message);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
+    void loadData();
   }, []);
 
-  // --- useEffect untuk Update Grafik saat filteredData berubah ---
-  useEffect(() => {
-    if (chartRef.current && filteredData.length > 0) {
-      if (chartInstance.current) {
-        chartInstance.current.destroy(); // Hancurkan instance chart yang lama jika ada
-      }
+  const tableRows = useMemo<HistoricalTableRow[]>(() => {
+    const flattened: HistoricalTableRow[] = [];
 
-      const ctx = chartRef.current.getContext('2d');
-      if (ctx) {
-        // Balikkan data untuk grafik agar tampilan dari terlama ke terbaru (kiri ke kanan)
-        const labels = filteredData.map(item => new Date(item.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: '2-digit' })).reverse();
-        const mediumSilindaPrices = filteredData.map(item => item.medium_silinda).reverse();
-        const premiumSilindaPrices = filteredData.map(item => item.premium_silinda).reverse();
-        const mediumBapanasPrices = filteredData.map(item => item.medium_bapanas).reverse();
-        const premiumBapanasPrices = filteredData.map(item => item.premium_bapanas).reverse();
+    rows.forEach((row, index) => {
+      RICE_CATEGORIES.forEach((category) => {
+        const price = row[category.id];
+        const previous = index > 0 ? rows[index - 1][category.id] : null;
 
-        chartInstance.current = new Chart(ctx, {
-          type: 'line', // Jenis grafik garis
-          data: {
-            labels: labels,
-            datasets: [
-              {
-                label: 'Medium Silinda',
-                data: mediumSilindaPrices,
-                borderColor: 'rgb(75, 192, 192)',
-                tension: 0.1,
-                fill: false,
-              },
-              {
-                label: 'Premium Silinda',
-                data: premiumSilindaPrices,
-                borderColor: 'rgb(255, 99, 132)',
-                tension: 0.1,
-                fill: false,
-              },
-              {
-                label: 'Medium Bapanas',
-                data: mediumBapanasPrices,
-                borderColor: 'rgb(54, 162, 235)',
-                tension: 0.1,
-                fill: false,
-              },
-              {
-                label: 'Premium Bapanas',
-                data: premiumBapanasPrices,
-                borderColor: 'rgb(255, 205, 86)',
-                tension: 0.1,
-                fill: false,
-              },
-            ],
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false, // Penting agar tinggi fix bisa diterapkan
-            scales: {
-              y: {
-                beginAtZero: false,
-                title: {
-                  display: true,
-                  text: 'Harga (Rp/kg)'
-                }
-              },
-              x: {
-                title: {
-                  display: true,
-                  text: 'Tanggal'
-                },
-                // Atur ticks agar tidak terlalu padat jika banyak data
-                ticks: {
-                  autoSkip: true,
-                  maxTicksLimit: 10 // Maksimal 10 label pada sumbu X
-                }
-              }
-            },
-            plugins: {
-              tooltip: {
-                callbacks: {
-                  // Perbaikan: Memberikan tipe eksplisit pada 'context'
-                  label: function(context: TooltipItem<'line'>) {
-                    let label = context.dataset.label || '';
-                    if (label) {
-                      label += ': ';
-                    }
-                    if (context.parsed.y !== null) {
-                      label += new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(context.parsed.y);
-                    }
-                    return label;
-                  }
-                }
-              },
-              legend: {
-                position: 'bottom', // Posisikan legend di bawah grafik
-              }
-            }
-          },
+        if (typeof price !== "number") return;
+
+        const change =
+          typeof previous === "number" && previous !== 0
+            ? ((price - previous) / previous) * 100
+            : null;
+
+        flattened.push({
+          id: `${row.id}-${category.id}`,
+          date: row.date,
+          category: category.id,
+          label: category.label,
+          price,
+          change,
+          source: "Data harga lokal",
         });
-      }
-    }
-  }, [filteredData]); // Jalankan efek ini setiap kali filteredData berubah
-
-  // --- Fungsi untuk Menerapkan Filter ---
-  const handleApplyFilter = () => {
-    setCurrentPage(1); // Reset halaman ke 1 setiap kali filter diterapkan
-    let tempFilteredData = [...rawData];
-
-    if (startDate || endDate) {
-      const start = startDate ? new Date(startDate) : null;
-      const end = endDate ? new Date(endDate) : null;
-
-      tempFilteredData = tempFilteredData.filter(item => {
-        const itemDate = new Date(item.date);
-        const isAfterStart = start ? itemDate >= start : true;
-        const isBeforeEnd = end ? itemDate <= end : true;
-        return isAfterStart && isBeforeEnd;
       });
-    }
+    });
 
-    setFilteredData(tempFilteredData);
-  };
+    return flattened.reverse();
+  }, [rows]);
 
-  // --- Logika Paginasi ---
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const filteredRows = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
 
-  const handlePrevPage = () => {
-    setCurrentPage(prev => Math.max(prev - 1, 1));
-  };
+    return tableRows.filter(
+      (row) =>
+        (!startDate || row.date >= startDate) &&
+        (!endDate || row.date <= endDate) &&
+        (!normalizedQuery || row.label.toLowerCase().includes(normalizedQuery)),
+    );
+  }, [endDate, query, startDate, tableRows]);
 
-  const handleNextPage = () => {
-    setCurrentPage(prev => Math.min(prev + 1, totalPages));
+  const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const visibleRows = filteredRows.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize,
+  );
+  const chartRows = useMemo(
+    () =>
+      rows
+        .filter(
+          (row) =>
+            (!startDate || row.date >= startDate) &&
+            (!endDate || row.date <= endDate),
+        )
+        .slice(-45)
+        .map((row) => ({
+          ...row,
+          label: format(parseISO(row.date), "dd MMM"),
+        })),
+    [endDate, rows, startDate],
+  );
+
+  useEffect(() => {
+    setPage(1);
+  }, [query, startDate, endDate]);
+
+  const handleExport = () => {
+    const exported = exportCsv(
+      `ricetrend-historis-${endDate || "data"}.csv`,
+      filteredRows.map((row) => ({
+        tanggal: row.date,
+        jenis_beras: row.label,
+        harga: row.price,
+        perubahan_persen: row.change?.toFixed(2) ?? "",
+        sumber: row.source,
+      })),
+    );
+
+    if (exported) notifySuccess("Data berhasil diekspor");
   };
 
   return (
-  <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-    {/* --- Title Dashboard --- */}
-    <div className="bg-white shadow-lg border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center">
-            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg mr-3 flex items-center justify-center">
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-            </div>
-            Data Harga Historis
-          </h1>
-        </div>
-      </div>
-    </div>
-
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      {/* --- Filter Pilih Periode Tanggal --- */}
-      <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-          <svg className="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.707A1 1 0 013 7V4z" />
-          </svg>
-          Filter Periode
-        </h2>
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center space-x-2">
-            <label htmlFor="start-date" className="text-sm font-medium text-gray-700">Dari:</label>
-            <input
-              type="date"
-              id="start-date"
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-            />
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <label htmlFor="end-date" className="text-sm font-medium text-gray-700">Sampai:</label>
-            <input
-              type="date"
-              id="end-date"
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-            />
-          </div>
-
+    <>
+      <PageHeader
+        title="Data Historis"
+        subtitle={`${filteredRows.length.toLocaleString("id-ID")} baris harga tersedia untuk analisis.`}
+        actions={
           <button
-            className="px-6 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg hover:from-blue-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-            onClick={handleApplyFilter}
+            type="button"
+            onClick={handleExport}
+            disabled={filteredRows.length === 0}
+            className="inline-flex h-10 items-center gap-2 rounded-xl border border-border bg-white px-4 text-sm font-semibold text-slate-700 hover:border-brand-500 hover:text-brand-700 disabled:opacity-50"
           >
-            Terapkan Filter
+            <Download className="h-4 w-4" aria-hidden="true" />
+            Export CSV
           </button>
-        </div>
-      </div>
+        }
+      />
 
-      {/* --- Area Visualisasi Grafis --- */}
-      <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-800 mb-6 flex items-center">
-          <svg className="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-          </svg>
-          Grafik Harga Beras Historis
-        </h3>
-        
-        <div className="h-96 relative">
+      <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <section className="rounded-card border border-border bg-white p-4 shadow-card sm:p-6">
+          <div className="grid gap-4 lg:grid-cols-[minmax(240px,1fr)_180px_180px_auto] lg:items-end">
+            <label className="space-y-2">
+              <span className="block text-xs font-semibold uppercase tracking-wide text-muted">
+                Cari Jenis Beras
+              </span>
+              <span className="relative block">
+                <Search
+                  className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
+                  aria-hidden="true"
+                />
+                <input
+                  type="search"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Contoh: Premium"
+                  className="h-11 w-full rounded-xl border border-border bg-white pl-10 pr-4 text-sm text-slate-800 shadow-sm"
+                />
+              </span>
+            </label>
+            <label className="space-y-2">
+              <span className="block text-xs font-semibold uppercase tracking-wide text-muted">
+                Dari
+              </span>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(event) => setStartDate(event.target.value)}
+                className="h-11 w-full rounded-xl border border-border bg-white px-3 text-sm text-slate-800"
+              />
+            </label>
+            <label className="space-y-2">
+              <span className="block text-xs font-semibold uppercase tracking-wide text-muted">
+                Sampai
+              </span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(event) => setEndDate(event.target.value)}
+                className="h-11 w-full rounded-xl border border-border bg-white px-3 text-sm text-slate-800"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={() => {
+                setQuery("");
+                if (rows.length > 0) {
+                  setStartDate(rows[Math.max(0, rows.length - 90)].date);
+                  setEndDate(rows[rows.length - 1].date);
+                }
+              }}
+              className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 text-sm font-semibold text-white transition hover:bg-brand-600 xl:flex-none"
+            >
+              <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
+              Reset
+            </button>
+          </div>
+        </section>
+
+        <section className="rounded-card border border-border bg-white p-5 shadow-card sm:p-6">
+          <div>
+            <h2 className="text-base font-semibold text-slate-900">
+              Pergerakan Harga
+            </h2>
+            <p className="mt-1 text-xs text-muted">
+              45 titik terakhir dalam rentang filter
+            </p>
+          </div>
+          {loading ? (
+            <Skeleton className="mt-5 h-72 w-full" />
+          ) : (
+            <div className="mt-5 h-72 min-w-0">
+              <ResponsiveContainer width="100%" height={288}>
+                <LineChart data={chartRows}>
+                  <XAxis
+                    dataKey="label"
+                    axisLine={false}
+                    tickLine={false}
+                    minTickGap={24}
+                    tick={{ fill: "var(--color-muted)", fontSize: 11 }}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    width={50}
+                    tick={{ fill: "var(--color-muted)", fontSize: 11 }}
+                    tickFormatter={(value: number) =>
+                      `${Math.round(value / 1000)}k`
+                    }
+                  />
+                  <Tooltip />
+                  <Line
+                    dataKey="medium_silinda"
+                    name="Medium Silinda"
+                    stroke="var(--color-brand-500)"
+                    dot={false}
+                    strokeWidth={2}
+                  />
+                  <Line
+                    dataKey="premium_silinda"
+                    name="Premium Silinda"
+                    stroke="var(--color-amber-500)"
+                    dot={false}
+                    strokeWidth={2}
+                  />
+                  <Line
+                    dataKey="medium_bapanas"
+                    name="Medium Bapanas"
+                    stroke="var(--color-slate-700)"
+                    dot={false}
+                    strokeWidth={2}
+                  />
+                  <Line
+                    dataKey="premium_bapanas"
+                    name="Premium Bapanas"
+                    stroke="var(--color-rose-500)"
+                    dot={false}
+                    strokeWidth={2}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </section>
+
+        <section className="overflow-hidden rounded-card border border-border bg-white shadow-card">
           {loading && (
-            <div className="flex items-center justify-center h-full">
-              <div className="flex items-center space-x-2">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                <span className="text-gray-600">Memuat grafik...</span>
-              </div>
-            </div>
-          )}
-          {error && (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <p className="text-red-500 font-medium">Error: {error}</p>
-              </div>
-            </div>
-          )}
-          {!loading && !error && filteredData.length === 0 && (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                  </svg>
-                </div>
-                <p className="text-gray-500">Tidak ada data untuk grafik dengan filter ini.</p>
-              </div>
-            </div>
-          )}
-          {!loading && !error && filteredData.length > 0 && (
-            <canvas ref={chartRef} className="w-full h-full"></canvas>
-          )}
-        </div>
-      </div>
-
-      {/* --- Area Tampilan Data Historis (Tabel dengan Paginasi) --- */}
-      <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-        <div className="p-6 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-800 flex items-center">
-            <svg className="w-5 h-5 text-purple-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-9-4v8m-7 0V4a1 1 0 011-1h16a1 1 0 011 1v16a1 1 0 01-1 1H6a1 1 0 01-1-1V10z" />
-            </svg>
-            Tabel Data Historis
-          </h3>
-        </div>
-
-        <div className="min-h-[400px]">
-          {loading && (
-            <div className="flex items-center justify-center h-96">
-              <div className="flex items-center space-x-2">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                <span className="text-gray-600">Memuat data tabel...</span>
-              </div>
-            </div>
-          )}
-          {error && (
-            <div className="flex items-center justify-center h-96">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <p className="text-red-500 font-medium">Error: {error}</p>
-              </div>
-            </div>
-          )}
-          {!loading && !error && filteredData.length === 0 && (
-            <div className="flex items-center justify-center h-96">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                  </svg>
-                </div>
-                <p className="text-gray-500">Tidak ada data yang ditemukan untuk filter ini.</p>
-              </div>
+            <div className="space-y-3 p-6" aria-busy="true">
+              {[0, 1, 2, 3, 4, 5].map((item) => (
+                <Skeleton key={item} className="h-12 w-full" />
+              ))}
             </div>
           )}
 
-          {!loading && !error && filteredData.length > 0 && (
+          {!loading && error && (
+            <EmptyState
+              title="Data historis gagal dimuat"
+              description={error}
+              className="p-8"
+            />
+          )}
+
+          {!loading && !error && visibleRows.length === 0 && (
+            <EmptyState
+              title="Data tidak ditemukan"
+              description="Ubah jenis beras atau rentang tanggal untuk melihat hasil."
+              className="p-8"
+            />
+          )}
+
+          {!loading && !error && visibleRows.length > 0 && (
             <>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
+              <div className="max-h-[560px] overflow-auto">
+                <table className="min-w-full text-sm">
+                  <thead className="sticky top-0 z-10 bg-slate-900 text-left text-xs uppercase tracking-wide text-slate-200">
                     <tr>
-                      <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Tanggal
+                      <th className="px-5 py-3 font-semibold">Tanggal</th>
+                      <th className="px-5 py-3 font-semibold">Jenis Beras</th>
+                      <th className="px-5 py-3 text-right font-semibold">
+                        Harga
                       </th>
-                      <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Medium Silinda (Rp/kg)
-                      </th>
-                      <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Premium Silinda (Rp/kg)
-                      </th>
-                      <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Medium Bapanas (Rp/kg)
-                      </th>
-                      <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Premium Bapanas (Rp/kg)
-                      </th>
+                      <th className="px-5 py-3 font-semibold">Perubahan</th>
+                      <th className="px-5 py-3 font-semibold">Sumber</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {currentItems.map((item, index) => (
-                      <tr key={item.id} className={`hover:bg-gray-50 transition-colors duration-150 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-25'}`}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {new Date(item.date).toLocaleDateString('id-ID', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
-                          })}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium">
-                          Rp {item.medium_silinda.toLocaleString('id-ID')}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium">
-                          Rp {item.premium_silinda.toLocaleString('id-ID')}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium">
-                          Rp {item.medium_bapanas.toLocaleString('id-ID')}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium">
-                          Rp {item.premium_bapanas.toLocaleString('id-ID')}
-                        </td>
-                      </tr>
-                    ))}
+                  <tbody className="divide-y divide-border">
+                    {visibleRows.map((row) => {
+                      const variant =
+                        row.change === null
+                          ? "neutral"
+                          : row.change > 0
+                            ? "up"
+                            : row.change < 0
+                              ? "down"
+                              : "neutral";
+
+                      return (
+                        <tr key={row.id} className="hover:bg-brand-50/50">
+                          <td className="whitespace-nowrap px-5 py-3 font-medium text-slate-800">
+                            {format(parseISO(row.date), "dd MMM yyyy")}
+                          </td>
+                          <td className="whitespace-nowrap px-5 py-3 text-slate-700">
+                            {row.label}
+                          </td>
+                          <td className="whitespace-nowrap px-5 py-3 text-right font-mono font-semibold text-slate-900">
+                            {formatCurrency(row.price)}
+                          </td>
+                          <td className="whitespace-nowrap px-5 py-3">
+                            <Badge variant={variant}>
+                              {row.change === null
+                                ? "N/A"
+                                : `${row.change > 0 ? "+" : ""}${row.change.toFixed(2)}%`}
+                            </Badge>
+                          </td>
+                          <td className="whitespace-nowrap px-5 py-3 text-muted">
+                            {row.source}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
-              
-              {/* Kontrol Paginasi */}
-              <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={handlePrevPage}
-                      disabled={currentPage === 1}
-                      className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                    >
-                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                      </svg>
-                      Previous
-                    </button>
-                    <button
-                      onClick={handleNextPage}
-                      disabled={currentPage === totalPages}
-                      className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                    >
-                      Next
-                      <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                  </div>
-                  
-                  <div className="flex items-center space-x-4">
-                    <span className="text-sm text-gray-700">
-                      Menampilkan {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, filteredData.length)} dari {filteredData.length} data
-                    </span>
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                      Halaman {currentPage} dari {totalPages}
-                    </span>
-                  </div>
+
+              <div className="flex flex-col gap-3 border-t border-border bg-surface px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-xs text-muted">
+                  Menampilkan {(currentPage - 1) * pageSize + 1}-
+                  {Math.min(currentPage * pageSize, filteredRows.length)} dari{" "}
+                  {filteredRows.length}
+                </p>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPage((value) => Math.max(1, value - 1))}
+                    disabled={currentPage === 1}
+                    className="h-9 rounded-xl border border-border bg-white px-3 text-sm font-semibold text-slate-700 disabled:opacity-40 cursor-pointer"
+                  >
+                    Sebelumnya
+                  </button>
+                  <span className="min-w-24 text-center text-xs font-medium text-muted">
+                    {currentPage} / {totalPages}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setPage((value) => Math.min(totalPages, value + 1))
+                    }
+                    disabled={currentPage === totalPages}
+                    className="h-9 rounded-xl border border-border bg-white px-3 text-sm font-semibold text-slate-700 disabled:opacity-40 cursor-pointer"
+                  >
+                    Berikutnya
+                  </button>
                 </div>
               </div>
             </>
           )}
-        </div>
+        </section>
       </div>
-    </div>
-  </div>
-);
-};
+    </>
+  );
+}
 
 export default DataHistoris;

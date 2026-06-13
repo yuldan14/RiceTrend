@@ -12,32 +12,29 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
+import type { TooltipContentProps } from 'recharts';
 import { format, parseISO, addDays, getDate } from 'date-fns'; 
+import { getRiceLabel, type HistoricalPriceData, type SelectedRiceCategory, type SpecialPeriod } from '../utils/api';
 
-// --- Interfaces ---
-type HistoricalPriceData = {
-  id: number;
-  date: string; // Format 'YYYY-MM-DD'
-  medium_silinda: number;
-  premium_silinda: number;
-  medium_bapanas: number;
-  premium_bapanas: number;
+type ChartPoint = {
+  date: string;
+  price: number | null;
+  isPrediction: boolean;
+  label: string;
 };
 
 interface PriceChartProps {
   historicalData: HistoricalPriceData[]; 
-  jenisBeras: string; 
-  predictionTomorrow: number | null; 
+  jenisBeras: SelectedRiceCategory; 
   predictionTomorrowSeries: number[] | null; 
   predictionNewYearSeries: number[] | null; 
   predictionIdulFitriSeries: number[] | null; 
-  periodePrediksi: '' | 'IdulFitri' | 'TahunBaru'; 
+  periodePrediksi: SpecialPeriod; 
 }
 
 const PriceChart: React.FC<PriceChartProps> = ({
   historicalData,
   jenisBeras,
-  predictionTomorrow, 
   predictionTomorrowSeries, 
   predictionNewYearSeries, 
   predictionIdulFitriSeries, 
@@ -51,9 +48,19 @@ const PriceChart: React.FC<PriceChartProps> = ({
     );
   }
 
-  const chartData: any[] = historicalData.map((data) => ({
+  const hasHistoricalPrice = historicalData.some((data) => data[jenisBeras] !== null);
+
+  if (!hasHistoricalPrice) {
+    return (
+      <div className="text-center text-gray-500 mt-5 p-5 border rounded-lg bg-gray-50">
+        Data historis untuk jenis beras ini belum tersedia.
+      </div>
+    );
+  }
+
+  const chartData: ChartPoint[] = historicalData.map((data) => ({
     date: data.date,
-    price: data[jenisBeras as keyof HistoricalPriceData],
+    price: data[jenisBeras],
     isPrediction: false,
     label: 'Historis',
   }));
@@ -94,12 +101,7 @@ const PriceChart: React.FC<PriceChartProps> = ({
     }
 
     if (seriesToAppend) {
-        let lastDateInChart = lastHistoricalDate;
-        if (chartData.length > historicalData.length) { 
-            lastDateInChart = parseISO(chartData[chartData.length - 1].date);
-        }
-        
-        let currentDateForSeries = lastDateInChart;
+        let currentDateForSeries = lastHistoricalDate;
         for (let i = 0; i < seriesToAppend.length; i++) {
             currentDateForSeries = addDays(currentDateForSeries, 1);
             const formattedDate = format(currentDateForSeries, 'yyyy-MM-dd');
@@ -124,26 +126,36 @@ const PriceChart: React.FC<PriceChartProps> = ({
   };
 
   // Komponen kustom untuk Tooltip (kotak info saat hover pada grafik)
-  const TooltipContent = ({ active, payload, label }: any) => {
+  const TooltipContent = ({
+    active,
+    payload,
+    label,
+  }: TooltipContentProps) => {
     if (active && payload && payload.length) {
-      const dataPoint = chartData.find(d => d.date === label);
+      const tooltipDate = String(label);
+      const dataPoint = chartData.find(d => d.date === tooltipDate);
+      const value = typeof payload[0].value === 'number'
+        ? `Rp ${payload[0].value.toLocaleString('id-ID')}`
+        : 'N/A';
+
       return (
         <div className="custom-tooltip bg-white p-3 border border-gray-300 rounded shadow-md">
-          <p className="label font-bold text-gray-800">{`Tanggal : ${format(parseISO(label), 'dd MMMMyyyy')}`}</p>
-          <p className="intro text-indigo-700">{`Harga : Rp ${payload[0].value?.toLocaleString('id-ID')}`}</p>
+          <p className="label font-bold text-gray-800">{`Tanggal : ${format(parseISO(tooltipDate), 'dd MMM yyyy')}`}</p>
+          <p className="intro text-indigo-700">{`Harga : ${value}`}</p>
           {dataPoint?.isPrediction && <p className="desc text-sm text-gray-500">{dataPoint.label}</p>}
         </div>
       );
     }
     return null;
   };
+  const riceLabel = getRiceLabel(jenisBeras);
 
   return (
     <div className="w-full md:w-9/10 h-[450px] bg-white p-6 rounded-lg shadow-lg flex flex-col items-center">
       <h3 className="text-2xl font-bold mb-6 text-gray-800 text-center">
-        Grafik Harga {jenisBeras.replace('_', ' ').replace(/\b\w/g, char => char.toUpperCase())}
+        Grafik Harga {riceLabel}
       </h3>
-      <ResponsiveContainer width="100%" height="80%">
+      <ResponsiveContainer width="100%" height={320}>
         <LineChart
           data={chartData}
           margin={{
@@ -169,15 +181,15 @@ const PriceChart: React.FC<PriceChartProps> = ({
             tick={{ fill: '#666', fontSize: 12 }}
             width={100} 
           />
-          <Tooltip content={<TooltipContent />} />
+          <Tooltip content={TooltipContent} />
           <Legend wrapperStyle={{ paddingTop: '20px' }} />
           <Line
             type="monotone"
             dataKey="price"
             stroke="#6366f1" 
             strokeWidth={2}
-            name={`Harga ${jenisBeras.replace('_', ' ').replace(/\b\w/g, char => char.toUpperCase())}`}
-            dot={({ cx, cy, stroke, key, payload }) => {
+            name={`Harga ${riceLabel}`}
+            dot={({ cx, cy, key, payload }) => {
                 const dateObj = parseISO(payload.date);
                 // Tampilkan dot hanya jika tanggalnya adalah tanggal 1 setiap bulan
                 if (getDate(dateObj) === 1) { 
