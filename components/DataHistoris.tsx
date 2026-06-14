@@ -173,7 +173,7 @@ export function DataHistoris() {
       <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
         <section className="rounded-card border border-border bg-white p-4 shadow-card sm:p-6">
           <div className="grid gap-4 lg:grid-cols-[minmax(240px,1fr)_180px_180px_auto] lg:items-end">
-            <label className="space-y-2">
+            <label className="min-w-0 space-y-2">
               <span className="block text-xs font-semibold uppercase tracking-wide text-muted">
                 Cari Jenis Beras
               </span>
@@ -191,7 +191,7 @@ export function DataHistoris() {
                 />
               </span>
             </label>
-            <label className="space-y-2">
+            <label className="min-w-0 space-y-2">
               <span className="block text-xs font-semibold uppercase tracking-wide text-muted">
                 Dari
               </span>
@@ -199,10 +199,10 @@ export function DataHistoris() {
                 type="date"
                 value={startDate}
                 onChange={(event) => setStartDate(event.target.value)}
-                className="h-11 w-full rounded-xl border border-border bg-white px-3 text-sm text-slate-800"
+                className="h-11 w-full min-w-0 rounded-xl border border-border bg-white px-3 text-sm text-slate-800"
               />
             </label>
-            <label className="space-y-2">
+            <label className="min-w-0 space-y-2">
               <span className="block text-xs font-semibold uppercase tracking-wide text-muted">
                 Sampai
               </span>
@@ -210,7 +210,7 @@ export function DataHistoris() {
                 type="date"
                 value={endDate}
                 onChange={(event) => setEndDate(event.target.value)}
-                className="h-11 w-full rounded-xl border border-border bg-white px-3 text-sm text-slate-800"
+                className="h-11 w-full min-w-0 rounded-xl border border-border bg-white px-3 text-sm text-slate-800"
               />
             </label>
             <button
@@ -355,7 +355,7 @@ export function DataHistoris() {
                           <td className="whitespace-nowrap px-5 py-3 text-slate-700">
                             {row.label}
                           </td>
-                          <td className="whitespace-nowrap px-5 py-3 text-right font-mono font-semibold text-slate-900">
+                          <td className="whitespace-nowrap px-5 py-3 text-right font-semibold text-slate-900 tabular-nums">
                             {formatCurrency(row.price)}
                           </td>
                           <td className="whitespace-nowrap px-5 py-3">

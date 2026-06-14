@@ -241,9 +241,9 @@ export function Dashboard({ variant = "overview" }: DashboardProps) {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8"
+        className="mx-auto flex w-full min-w-0 max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8"
       >
-        <motion.div variants={cardVariants}>
+        <motion.div className="min-w-0" variants={cardVariants}>
           <ControlBar
             rice={rice}
             model={model}
@@ -259,7 +259,7 @@ export function Dashboard({ variant = "overview" }: DashboardProps) {
           />
         </motion.div>
 
-        <motion.div variants={cardVariants}>
+        <motion.div className="min-w-0" variants={cardVariants}>
           <StatsRow
             currentPrice={currentPrice}
             prediction={prediction}
@@ -272,8 +272,8 @@ export function Dashboard({ variant = "overview" }: DashboardProps) {
           />
         </motion.div>
 
-        <div className="grid gap-6 xl:grid-cols-2">
-          <motion.div variants={cardVariants}>
+        <div className="grid min-w-0 gap-6 xl:grid-cols-2">
+          <motion.div className="min-w-0" variants={cardVariants}>
             <PriceCard
               rice={rice}
               price={currentPrice}
@@ -284,7 +284,7 @@ export function Dashboard({ variant = "overview" }: DashboardProps) {
               alertThreshold={alertsEnabled ? alertThreshold : Number.POSITIVE_INFINITY}
             />
           </motion.div>
-          <motion.div variants={cardVariants}>
+          <motion.div className="min-w-0" variants={cardVariants}>
             <PredictionCard
               rice={rice}
               model={model}

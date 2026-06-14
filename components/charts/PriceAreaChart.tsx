@@ -15,7 +15,7 @@ function AreaTooltip({ active, payload, label }: TooltipContentProps) {
   return (
     <div className="rounded-xl bg-slate-900 px-3 py-2 text-xs text-white shadow-card">
       <p>{label}</p>
-      <p className="mt-1 font-mono font-semibold">{formatCurrency(payload[0].value)}</p>
+      <p className="mt-1 font-semibold tabular-nums">{formatCurrency(payload[0].value)}</p>
     </div>
   );
 }

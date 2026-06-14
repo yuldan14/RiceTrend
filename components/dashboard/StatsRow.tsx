@@ -28,7 +28,7 @@ export function StatsRow({
   const trendVariant = trendPercent === null ? "neutral" : trendPercent >= 0 ? "up" : "down";
 
   return (
-    <section className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4" aria-label="Ringkasan harga">
+    <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:gap-4" aria-label="Ringkasan harga">
       <StatCard
         label="Harga Terakhir"
         value={formatCurrency(currentPrice)}

@@ -36,7 +36,7 @@ export function ControlBar({
   onExport,
 }: ControlBarProps) {
   return (
-    <section className="rounded-card border border-border bg-white px-4 py-4 shadow-card sm:px-6">
+    <section className="min-w-0 rounded-card border border-border bg-white px-4 py-4 shadow-card sm:px-6">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-end">
         <div className="flex flex-1 flex-col gap-4 sm:flex-row">
           <CustomSelect
@@ -57,22 +57,22 @@ export function ControlBar({
           />
         </div>
         <div className="grid gap-3 sm:grid-cols-2 xl:flex">
-          <label className="space-y-2">
+          <label className="min-w-0 space-y-2">
             <span className="block text-xs font-semibold uppercase tracking-wide text-muted">Dari</span>
             <input
               type="date"
               value={startDate}
               onChange={(event) => onStartDateChange(event.target.value)}
-              className="h-11 w-full rounded-xl border border-border bg-white px-3 text-sm text-slate-800 shadow-sm"
+              className="h-11 w-full min-w-0 rounded-xl border border-border bg-white px-3 text-sm text-slate-800 shadow-sm"
             />
           </label>
-          <label className="space-y-2">
+          <label className="min-w-0 space-y-2">
             <span className="block text-xs font-semibold uppercase tracking-wide text-muted">Sampai</span>
             <input
               type="date"
               value={endDate}
               onChange={(event) => onEndDateChange(event.target.value)}
-              className="h-11 w-full rounded-xl border border-border bg-white px-3 text-sm text-slate-800 shadow-sm"
+              className="h-11 w-full min-w-0 rounded-xl border border-border bg-white px-3 text-sm text-slate-800 shadow-sm"
             />
           </label>
         </div>

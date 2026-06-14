@@ -15,14 +15,14 @@ function SparklineTooltip({ active, payload, label }: TooltipContentProps) {
   return (
     <div className="rounded-lg bg-slate-900 px-3 py-2 text-xs text-white shadow-card">
       <p className="font-medium">{label}</p>
-      <p className="font-mono">{formatCurrency(payload[0].value)}</p>
+      <p className="font-medium tabular-nums">{formatCurrency(payload[0].value)}</p>
     </div>
   );
 }
 
 export function PriceSparkline({ data }: PriceSparklineProps) {
   return (
-    <div className="h-12 min-w-0 w-[72px]">
+    <div className="h-12 min-w-0 w-full">
       <ResponsiveContainer width="100%" height={48}>
         <LineChart data={data}>
           <Tooltip content={SparklineTooltip} cursor={false} />

@@ -30,7 +30,7 @@ function ForecastTooltip({ active, payload, label }: TooltipContentProps) {
     <div className="rounded-xl bg-slate-900 px-3 py-2 text-xs text-white shadow-card">
       <p className="font-medium">{label}</p>
       {values.map((item) => (
-        <p key={String(item.dataKey)} className="mt-1 font-mono">
+        <p key={String(item.dataKey)} className="mt-1 tabular-nums">
           {item.dataKey === "historical" ? "Historis" : "Prediksi"}:{" "}
           {formatCurrency(item.value)}
         </p>

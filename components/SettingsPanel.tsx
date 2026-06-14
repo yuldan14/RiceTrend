@@ -156,7 +156,7 @@ export function SettingsPanel() {
           <label className="mt-6 block">
             <span className="flex items-center justify-between text-sm font-medium text-slate-700">
               Ambang perubahan
-              <span className="font-mono font-bold text-brand-700">{threshold}%</span>
+              <span className="font-bold text-brand-700 tabular-nums">{threshold}%</span>
             </span>
             <input
               type="range"

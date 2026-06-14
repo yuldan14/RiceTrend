@@ -30,7 +30,7 @@ export function PriceCard({
 }: PriceCardProps) {
   if (loading) {
     return (
-      <article className="rounded-card border border-border bg-white p-6 shadow-card" aria-busy="true">
+      <article className="rounded-card border border-border bg-white p-4 shadow-card sm:p-6" aria-busy="true">
         <Skeleton className="h-6 w-36" />
         <Skeleton className="mt-8 h-12 w-56" />
         <Skeleton className="mt-6 h-44 w-full" />
@@ -40,7 +40,7 @@ export function PriceCard({
 
   if (!rice) {
     return (
-      <article className="rounded-card border border-border bg-white p-6 shadow-card">
+      <article className="rounded-card border border-border bg-white p-4 shadow-card sm:p-6">
         <EmptyState
           icon={<Wheat className="h-8 w-8" aria-hidden="true" />}
           title="Pilih jenis beras untuk melihat harga"
@@ -53,7 +53,7 @@ export function PriceCard({
 
   if (price === null) {
     return (
-      <article className="rounded-card border border-border bg-white p-6 shadow-card">
+      <article className="rounded-card border border-border bg-white p-4 shadow-card sm:p-6">
         <EmptyState
           icon={<Wheat className="h-8 w-8" aria-hidden="true" />}
           title="Harga belum tersedia"
@@ -67,7 +67,7 @@ export function PriceCard({
   const trendVariant = change === null ? "neutral" : change >= 0 ? "up" : "down";
 
   return (
-    <article className="rounded-card border border-border bg-white p-6 shadow-card transition hover:shadow-card-hover">
+    <article className="min-w-0 rounded-card border border-border bg-white p-4 shadow-card transition hover:shadow-card-hover sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
@@ -86,12 +86,14 @@ export function PriceCard({
         </Badge>
       </div>
 
-      <div className="mt-7 flex flex-wrap items-end gap-3">
-        <p className="font-mono text-4xl font-black text-slate-900">
-          <span className="mr-2 text-2xl font-bold">Rp</span>
-          <CountUp end={Math.round(price)} duration={0.6} separator="." />
-        </p>
-        <span className="pb-1 text-sm text-muted">/kg</span>
+      <div className="mt-7 flex min-w-0 flex-wrap items-end gap-x-3 gap-y-2">
+        <div className="flex min-w-0 items-baseline gap-1.5 whitespace-nowrap">
+          <span className="text-xl font-bold text-slate-700 sm:text-2xl">Rp</span>
+          <p className="text-3xl font-extrabold tracking-tight text-slate-900 tabular-nums sm:text-4xl">
+            <CountUp end={Math.round(price)} duration={0.6} separator="." />
+          </p>
+          <span className="text-sm font-medium text-muted">/kg</span>
+        </div>
         <Badge variant={trendVariant}>{formatPercent(change)} vs sebelumnya</Badge>
       </div>
 

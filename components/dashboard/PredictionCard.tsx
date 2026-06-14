@@ -34,7 +34,7 @@ export function PredictionCard({
 }: PredictionCardProps) {
   if (loading) {
     return (
-      <article className="rounded-card border border-border bg-white p-6 shadow-card" aria-busy="true">
+      <article className="rounded-card border border-border bg-white p-4 shadow-card sm:p-6" aria-busy="true">
         <Skeleton className="h-6 w-44" />
         <Skeleton className="mt-8 h-12 w-56" />
         <Skeleton className="mt-6 h-72 w-full" />
@@ -44,7 +44,7 @@ export function PredictionCard({
 
   if (!rice) {
     return (
-      <article className="rounded-card border border-border bg-white p-6 shadow-card">
+      <article className="rounded-card border border-border bg-white p-4 shadow-card sm:p-6">
         <EmptyState
           icon={
             <span className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-dashed border-brand-500">
@@ -60,7 +60,7 @@ export function PredictionCard({
 
   if (error) {
     return (
-      <article className="rounded-card border border-amber-200 bg-amber-50 p-6 shadow-card">
+      <article className="rounded-card border border-amber-200 bg-amber-50 p-4 shadow-card sm:p-6">
         <EmptyState
           icon={<AlertCircle className="h-8 w-8 text-amber-500" aria-hidden="true" />}
           title="Data belum tersedia"
@@ -82,7 +82,7 @@ export function PredictionCard({
 
   if (prediction === null) {
     return (
-      <article className="rounded-card border border-border bg-white p-6 shadow-card">
+      <article className="rounded-card border border-border bg-white p-4 shadow-card sm:p-6">
         <EmptyState
           icon={<TrendingUp className="h-8 w-8" aria-hidden="true" />}
           title="Prediksi belum tersedia"
@@ -96,7 +96,7 @@ export function PredictionCard({
   const otherModel = model === "ARIMA" ? "LSTM" : "ARIMA";
 
   return (
-    <article className="rounded-card border border-border bg-white p-6 shadow-card transition hover:shadow-card-hover">
+    <article className="min-w-0 rounded-card border border-border bg-white p-4 shadow-card transition hover:shadow-card-hover sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-base font-semibold text-slate-900">Prediksi Harga Berikutnya</h2>
@@ -105,21 +105,23 @@ export function PredictionCard({
         <Badge variant="model">{model}</Badge>
       </div>
 
-      <div className="mt-7 flex flex-wrap items-end gap-3">
-        <p className="font-mono text-4xl font-black text-slate-900">
-          <span className="mr-2 text-2xl font-bold">Rp</span>
-          <CountUp end={Math.round(prediction)} duration={0.6} separator="." />
-        </p>
-        <span className="pb-1 text-sm text-muted">/kg</span>
+      <div className="mt-7 flex min-w-0 flex-wrap items-end gap-x-3 gap-y-2">
+        <div className="flex min-w-0 items-baseline gap-1.5 whitespace-nowrap">
+          <span className="text-xl font-bold text-slate-700 sm:text-2xl">Rp</span>
+          <p className="text-3xl font-extrabold tracking-tight text-slate-900 tabular-nums sm:text-4xl">
+            <CountUp end={Math.round(prediction)} duration={0.6} separator="." />
+          </p>
+          <span className="text-sm font-medium text-muted">/kg</span>
+        </div>
         <Badge variant={change === null ? "neutral" : change >= 0 ? "up" : "down"}>
           {formatPercent(change)}
         </Badge>
       </div>
 
       <div className="mt-6 rounded-xl bg-surface p-4">
-        <div className="flex items-center justify-between gap-3 text-xs text-muted">
+        <div className="flex flex-col gap-1.5 text-xs text-muted sm:flex-row sm:items-center sm:justify-between sm:gap-3">
           <span>Rentang prediksi</span>
-          <span className="font-mono font-semibold text-slate-700">
+          <span className="font-semibold text-slate-700 tabular-nums">
             {formatCurrency(prediction - spread)} - {formatCurrency(prediction + spread)}
           </span>
         </div>
@@ -128,7 +130,7 @@ export function PredictionCard({
         </div>
         <p className="mt-3 text-xs text-muted">
           vs model {otherModel}:{" "}
-          <span className="font-mono font-semibold text-slate-700">{formatCurrency(comparison)}</span>
+          <span className="font-semibold text-slate-700 tabular-nums">{formatCurrency(comparison)}</span>
         </p>
       </div>
 

@@ -33,7 +33,7 @@ export function CustomSelect<TValue extends string>({
   className,
 }: CustomSelectProps<TValue>) {
   return (
-    <div className={cn("min-w-52 flex-1 space-y-2", className)}>
+    <div className={cn("min-w-0 flex-1 space-y-2", className)}>
       <label htmlFor={id} className="block text-xs font-semibold uppercase tracking-wide text-muted">
         {label}
       </label>
@@ -44,7 +44,7 @@ export function CustomSelect<TValue extends string>({
       >
         <Select.Trigger
           id={id}
-          className="flex h-11 w-full items-center justify-between rounded-xl border border-border bg-white px-4 text-left text-sm font-medium text-slate-900 shadow-sm transition hover:border-brand-500 focus:shadow-glow data-[state=open]:border-brand-500 data-[state=open]:shadow-glow disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex h-11 w-full min-w-0 items-center justify-between gap-2 rounded-xl border border-border bg-white px-4 text-left text-sm font-medium text-slate-900 shadow-sm transition hover:border-brand-500 focus:shadow-glow data-[state=open]:border-brand-500 data-[state=open]:shadow-glow disabled:cursor-not-allowed disabled:opacity-60"
           aria-label={label}
         >
           <Select.Value placeholder={placeholder} />

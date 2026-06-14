@@ -56,7 +56,7 @@ export function AppShell({ children }: AppShellProps) {
   };
 
   return (
-    <div className="min-h-screen bg-surface" onClickCapture={handleNavigationCapture}>
+    <div className="min-h-screen min-w-0 bg-surface" onClickCapture={handleNavigationCapture}>
       <div
         className={cn(
           "fixed left-0 right-0 top-0 z-[100] h-0.5 origin-left bg-brand-500 opacity-0 transition-opacity",
@@ -69,7 +69,7 @@ export function AppShell({ children }: AppShellProps) {
       <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((value) => !value)} />
       <main
         className={cn(
-          "min-h-screen pb-20 transition-[margin] duration-200 md:ml-16 md:pb-0",
+          "min-h-screen min-w-0 pb-20 transition-[margin] duration-200 md:ml-16 md:pb-0",
           collapsed ? "lg:ml-16" : "lg:ml-60",
         )}
       >

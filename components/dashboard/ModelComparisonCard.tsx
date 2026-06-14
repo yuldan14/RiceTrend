@@ -16,7 +16,7 @@ export function ModelComparisonCard({
   const metrics = getModelMetricRows(model);
 
   return (
-    <article className="rounded-card border border-border bg-white p-5 shadow-card transition hover:-translate-y-0.5 hover:shadow-card-hover">
+    <article className="min-w-0 rounded-card border border-border bg-white p-4 shadow-card transition hover:-translate-y-0.5 hover:shadow-card-hover sm:p-5">
       <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-bold text-slate-900">{model}</h2>
@@ -35,7 +35,7 @@ export function ModelComparisonCard({
         ].map(([label, value]) => (
           <div key={label} className="rounded-xl bg-surface p-3 text-center">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">{label}</p>
-            <p className="mt-1 font-mono text-sm font-bold text-slate-900">{value}</p>
+            <p className="mt-1 text-sm font-bold text-slate-900 tabular-nums">{value}</p>
           </div>
         ))}
       </div>
@@ -43,7 +43,7 @@ export function ModelComparisonCard({
       <div className="mt-5">
         <div className="flex items-center justify-between text-xs">
           <span className="font-medium text-slate-700">Akurasi</span>
-          <span className="font-mono font-bold text-brand-700">{metrics.accuracy}%</span>
+          <span className="font-bold text-brand-700 tabular-nums">{metrics.accuracy}%</span>
         </div>
         <div className="mt-2 h-2 overflow-hidden rounded-pill bg-brand-100">
           <div
@@ -70,7 +70,7 @@ export function ModelComparisonCard({
             {predictions.slice(0, 7).map((value, index) => (
               <tr key={`${model}-${index}`} className="text-slate-700">
                 <td className="px-3 py-2">H+{index + 1}</td>
-                <td className="px-3 py-2 text-right font-mono font-semibold">
+                <td className="px-3 py-2 text-right font-semibold tabular-nums">
                   {formatCurrency(value)}
                 </td>
               </tr>
