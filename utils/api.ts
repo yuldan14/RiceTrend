@@ -1,4 +1,4 @@
-import { addDays, differenceInCalendarDays, format, parseISO } from "date-fns";
+import { addDays, differenceInCalendarDays, format, isValid, parseISO } from "date-fns";
 
 export const RICE_CATEGORIES = [
   { id: "medium_silinda", label: "Beras Medium Silinda" },
@@ -28,7 +28,7 @@ interface LocalPredictionData {
   last_updated_date: string;
   predictions_start_date: string;
   prediction_horizon_days: number;
-  predictions: Record<RiceCategory, number[]>;
+  predictions: Record<RiceCategory, PriceValue[]>;
 }
 
 const HISTORICAL_PRICE_PATH = "/data_harga.json";
@@ -49,7 +49,7 @@ export const isRiceCategory = (value: string): value is RiceCategory => riceCate
 export const getRiceLabel = (category: string) =>
   RICE_CATEGORIES.find((item) => item.id === category)?.label ?? category;
 
-export const formatCurrency = (value: PriceValue | undefined) =>
+export const formatCurrency = (value: unknown) =>
   typeof value === "number" && Number.isFinite(value)
     ? `Rp ${Math.round(value).toLocaleString("id-ID")}`
     : "N/A";
@@ -105,28 +105,92 @@ const normalizePrice = (value: unknown): PriceValue => {
   return null;
 };
 
-const normalizeHistoricalRows = (rows: unknown[]): HistoricalPriceData[] =>
-  rows
-    .map((row, index) => {
-      const record = row as Record<string, unknown>;
-      const id = Number(record.id);
-      const date = typeof record.date === "string" ? record.date : "";
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
 
-      return {
-        id: Number.isFinite(id) ? id : index + 1,
+const normalizeFiniteNumber = (value: unknown, fallback: number) => {
+  if (
+    (typeof value === "number" && Number.isFinite(value)) ||
+    (typeof value === "string" && value.trim() !== "" && Number.isFinite(Number(value)))
+  ) {
+    return Number(value);
+  }
+
+  return fallback;
+};
+
+const normalizeDate = (value: unknown) => {
+  if (typeof value !== "string" || !isValid(parseISO(value))) return null;
+
+  return value;
+};
+
+const normalizeHistoricalRows = (payload: unknown): HistoricalPriceData[] => {
+  if (!Array.isArray(payload)) {
+    throw new Error("Format data historis tidak valid.");
+  }
+
+  return payload
+    .flatMap((row, index) => {
+      if (!isRecord(row)) return [];
+
+      const date = normalizeDate(row.date);
+      if (!date) return [];
+
+      return [{
+        id: normalizeFiniteNumber(row.id, index + 1),
         date,
-        medium_silinda: normalizePrice(record.medium_silinda),
-        premium_silinda: normalizePrice(record.premium_silinda),
-        medium_bapanas: normalizePrice(record.medium_bapanas),
-        premium_bapanas: normalizePrice(record.premium_bapanas),
-      };
+        medium_silinda: normalizePrice(row.medium_silinda),
+        premium_silinda: normalizePrice(row.premium_silinda),
+        medium_bapanas: normalizePrice(row.medium_bapanas),
+        premium_bapanas: normalizePrice(row.premium_bapanas),
+      }];
     })
-    .filter((row) => row.date)
     .sort((a, b) => parseISO(a.date).getTime() - parseISO(b.date).getTime());
+};
+
+const normalizePredictionData = (payload: unknown): LocalPredictionData => {
+  if (!isRecord(payload) || !isRecord(payload.predictions)) {
+    throw new Error("Format data prediksi tidak valid.");
+  }
+
+  const lastUpdatedDate = normalizeDate(payload.last_updated_date);
+  const predictionsStartDate = normalizeDate(payload.predictions_start_date);
+  const predictionHorizon = normalizeFiniteNumber(payload.prediction_horizon_days, 0);
+
+  if (!lastUpdatedDate || !predictionsStartDate || predictionHorizon <= 0) {
+    throw new Error("Metadata data prediksi tidak valid.");
+  }
+
+  const predictions = {} as Record<RiceCategory, PriceValue[]>;
+
+  for (const { id } of RICE_CATEGORIES) {
+    const series = payload.predictions[id];
+
+    if (!Array.isArray(series)) {
+      throw new Error(`Tidak ada prediksi untuk ${id}.`);
+    }
+
+    predictions[id] = series.map(normalizePrice);
+  }
+
+  return {
+    last_updated_date: lastUpdatedDate,
+    predictions_start_date: predictionsStartDate,
+    prediction_horizon_days: predictionHorizon,
+    predictions,
+  };
+};
+
+const getValidPrice = (row: HistoricalPriceData, category: RiceCategory) => {
+  const value = row[category];
+
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+};
 
 export const getHistoricalPrices = async () => {
   if (!historicalPriceCache) {
-    historicalPriceCache = loadJson<unknown[]>(HISTORICAL_PRICE_PATH)
+    historicalPriceCache = loadJson<unknown>(HISTORICAL_PRICE_PATH)
       .then(normalizeHistoricalRows)
       .catch((error) => {
         historicalPriceCache = null;
@@ -160,12 +224,27 @@ export const getLatestPriceSnapshot = (rows: HistoricalPriceData[], offset = 0):
   return snapshot;
 };
 
-export const getLastHistoricalDate = (rows: HistoricalPriceData[]) =>
-  rows.length > 0 ? rows[rows.length - 1].date : null;
+export const getLastHistoricalDate = (
+  rows: HistoricalPriceData[],
+  category?: RiceCategory,
+) => {
+  for (let index = rows.length - 1; index >= 0; index -= 1) {
+    if (!category || getValidPrice(rows[index], category) !== null) {
+      return rows[index].date;
+    }
+  }
+
+  return null;
+};
 
 const loadPredictionData = async (model: PredictionModel) => {
   if (!predictionCache[model]) {
-    predictionCache[model] = loadJson<LocalPredictionData>(PREDICTION_PATHS[model]);
+    predictionCache[model] = loadJson<unknown>(PREDICTION_PATHS[model])
+      .then(normalizePredictionData)
+      .catch((error) => {
+        delete predictionCache[model];
+        throw error;
+      });
   }
 
   return predictionCache[model] as Promise<LocalPredictionData>;
@@ -215,7 +294,17 @@ export const getPrediction = async (
     throw new Error(`Rentang prediksi ${stepsAhead} hari melebihi horizon ${series.length} hari.`);
   }
 
-  return series.slice(startIndex, endIndex);
+  const selectedSeries = series.slice(startIndex, endIndex);
+  const missingIndex = selectedSeries.findIndex(
+    (value) => typeof value !== "number" || !Number.isFinite(value),
+  );
+
+  if (missingIndex >= 0) {
+    const missingDate = format(addDays(parseISO(requestStartDate), missingIndex), "yyyy-MM-dd");
+    throw new Error(`Prediksi ${category} untuk ${missingDate} tidak tersedia.`);
+  }
+
+  return selectedSeries as number[];
 };
 
 export const getPredictionSeriesToDate = async (

@@ -40,7 +40,7 @@ export function Perbandingan() {
 
     try {
       const history = await getHistoricalPrices();
-      const lastDate = getLastHistoricalDate(history);
+      const lastDate = getLastHistoricalDate(history, rice);
 
       if (!lastDate) throw new Error("Tanggal historis terakhir tidak tersedia.");
 

@@ -12,12 +12,10 @@ export interface PriceSparklineProps {
 function SparklineTooltip({ active, payload, label }: TooltipContentProps) {
   if (!active || !payload?.length) return null;
 
-  const value = Number(payload[0].value);
-
   return (
     <div className="rounded-lg bg-slate-900 px-3 py-2 text-xs text-white shadow-card">
       <p className="font-medium">{label}</p>
-      <p className="font-mono">{formatCurrency(value)}</p>
+      <p className="font-mono">{formatCurrency(payload[0].value)}</p>
     </div>
   );
 }

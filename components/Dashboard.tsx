@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { format, parseISO } from "date-fns";
+import { addDays, format, parseISO } from "date-fns";
 import { motion } from "framer-motion";
 import { Database, RefreshCw } from "lucide-react";
 import { ControlBar } from "@/components/dashboard/ControlBar";
@@ -94,10 +94,26 @@ export function Dashboard({ variant = "overview" }: DashboardProps) {
     if (storedAlerts !== null) setAlertsEnabled(storedAlerts === "true");
   }, []);
 
-  const lastHistoricalDate = getLastHistoricalDate(rows);
+  useEffect(() => {
+    if (!rice || rows.length === 0) return;
+
+    const availableRows = rows.filter((row) => {
+      const value = row[rice];
+
+      return typeof value === "number" && Number.isFinite(value);
+    });
+
+    if (availableRows.length === 0) return;
+
+    setStartDate(availableRows[Math.max(0, availableRows.length - 30)].date);
+    setEndDate(availableRows[availableRows.length - 1].date);
+  }, [rice, rows]);
+
+  const datasetLastDate = getLastHistoricalDate(rows);
+  const selectedLastDate = rice ? getLastHistoricalDate(rows, rice) : null;
 
   const loadPrediction = useCallback(async () => {
-    if (!rice || !lastHistoricalDate) {
+    if (!rice || !selectedLastDate) {
       setForecastValues([]);
       setComparison(null);
       setPredictionError("");
@@ -108,10 +124,7 @@ export function Dashboard({ variant = "overview" }: DashboardProps) {
     setPredictionError("");
 
     try {
-      const predictionStart = format(
-        new Date(parseISO(lastHistoricalDate).getTime() + 24 * 60 * 60 * 1000),
-        "yyyy-MM-dd",
-      );
+      const predictionStart = format(addDays(parseISO(selectedLastDate), 1), "yyyy-MM-dd");
       const otherModel: PredictionModel = model === "ARIMA" ? "LSTM" : "ARIMA";
       const [selectedSeries, comparisonSeries] = await Promise.all([
         getPrediction(rice, model, 7, { startDate: predictionStart }),
@@ -127,7 +140,7 @@ export function Dashboard({ variant = "overview" }: DashboardProps) {
     } finally {
       setLoadingPrediction(false);
     }
-  }, [lastHistoricalDate, model, rice]);
+  }, [model, rice, selectedLastDate]);
 
   useEffect(() => {
     void loadPrediction();
@@ -168,9 +181,10 @@ export function Dashboard({ variant = "overview" }: DashboardProps) {
   const currentChange = getTrendPercent(previousPrice, currentPrice);
   const predictionChange = getTrendPercent(currentPrice, prediction);
   const volatility = getVolatility(history);
-  const forecast = getForecastPoints(history, forecastValues, lastHistoricalDate);
-  const lastUpdated = lastHistoricalDate
-    ? format(parseISO(lastHistoricalDate), "dd MMM yyyy")
+  const forecast = getForecastPoints(history, forecastValues, selectedLastDate);
+  const displayLastDate = selectedLastDate ?? datasetLastDate;
+  const lastUpdated = displayLastDate
+    ? format(parseISO(displayLastDate), "dd MMM yyyy")
     : null;
 
   const handleRefresh = () => setRefreshKey((value) => value + 1);

@@ -38,7 +38,7 @@ export function PriceCard({
     );
   }
 
-  if (!rice || price === null) {
+  if (!rice) {
     return (
       <article className="rounded-card border border-border bg-white p-6 shadow-card">
         <EmptyState
@@ -46,6 +46,18 @@ export function PriceCard({
           title="Pilih jenis beras untuk melihat harga"
           description="Gunakan dropdown di atas untuk memulai."
           arrow
+        />
+      </article>
+    );
+  }
+
+  if (price === null) {
+    return (
+      <article className="rounded-card border border-border bg-white p-6 shadow-card">
+        <EmptyState
+          icon={<Wheat className="h-8 w-8" aria-hidden="true" />}
+          title="Harga belum tersedia"
+          description={`Data harga ${getRiceLabel(rice)} masih kosong.`}
         />
       </article>
     );
@@ -63,7 +75,7 @@ export function PriceCard({
               <Wheat className="h-4.5 w-4.5" aria-hidden="true" />
             </span>
             <div>
-              <h2 className="text-base font-semibold text-slate-900">Harga Saat Ini</h2>
+              <h2 className="text-base font-semibold text-slate-900">Harga Terakhir</h2>
               <p className="text-xs text-muted">{getRiceLabel(rice)}</p>
             </div>
           </div>
@@ -80,7 +92,7 @@ export function PriceCard({
           <CountUp end={Math.round(price)} duration={0.6} separator="." />
         </p>
         <span className="pb-1 text-sm text-muted">/kg</span>
-        <Badge variant={trendVariant}>{formatPercent(change)} hari ini</Badge>
+        <Badge variant={trendVariant}>{formatPercent(change)} vs sebelumnya</Badge>
       </div>
 
       {significant && (

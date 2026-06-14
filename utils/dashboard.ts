@@ -108,7 +108,7 @@ export const getForecastPoints = (
 
     return {
       date: format(date, "yyyy-MM-dd"),
-      label: index === 0 ? "Besok" : format(date, "dd MMM"),
+      label: index === 0 ? "Berikutnya" : format(date, "dd MMM"),
       forecast: value,
       lower: value - spread,
       upper: value + spread,
@@ -118,7 +118,7 @@ export const getForecastPoints = (
   const visibleHistory = historicalPoints.slice(-14);
   visibleHistory[visibleHistory.length - 1] = {
     date: lastHistory.date,
-    label: "Hari Ini",
+    label: "Data Terakhir",
     historical: lastHistory.value,
     forecast: lastHistory.value,
     lower: lastHistory.value,

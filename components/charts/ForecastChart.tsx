@@ -32,7 +32,7 @@ function ForecastTooltip({ active, payload, label }: TooltipContentProps) {
       {values.map((item) => (
         <p key={String(item.dataKey)} className="mt-1 font-mono">
           {item.dataKey === "historical" ? "Historis" : "Prediksi"}:{" "}
-          {formatCurrency(Number(item.value))}
+          {formatCurrency(item.value)}
         </p>
       ))}
     </div>
@@ -99,10 +99,10 @@ export function ForecastChart({ data }: ForecastChartProps) {
             animationDuration={800}
           />
           <ReferenceLine
-            x="Hari Ini"
+            x="Data Terakhir"
             stroke="var(--color-muted)"
             strokeDasharray="4 4"
-            label={{ value: "Hari Ini", fill: "var(--color-muted)", fontSize: 10 }}
+            label={{ value: "Data Terakhir", fill: "var(--color-muted)", fontSize: 10 }}
           />
         </ComposedChart>
       </ResponsiveContainer>

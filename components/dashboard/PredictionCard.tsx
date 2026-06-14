@@ -80,7 +80,17 @@ export function PredictionCard({
     );
   }
 
-  if (prediction === null) return null;
+  if (prediction === null) {
+    return (
+      <article className="rounded-card border border-border bg-white p-6 shadow-card">
+        <EmptyState
+          icon={<TrendingUp className="h-8 w-8" aria-hidden="true" />}
+          title="Prediksi belum tersedia"
+          description="Nilai prediksi untuk rentang tanggal ini masih kosong."
+        />
+      </article>
+    );
+  }
 
   const spread = prediction * 0.018;
   const otherModel = model === "ARIMA" ? "LSTM" : "ARIMA";
@@ -89,8 +99,8 @@ export function PredictionCard({
     <article className="rounded-card border border-border bg-white p-6 shadow-card transition hover:shadow-card-hover">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-base font-semibold text-slate-900">Prediksi Harga Besok</h2>
-          <p className="mt-1 text-xs text-muted">Proyeksi berdasarkan data historis terbaru</p>
+          <h2 className="text-base font-semibold text-slate-900">Prediksi Harga Berikutnya</h2>
+          <p className="mt-1 text-xs text-muted">Proyeksi setelah data terakhir tersedia</p>
         </div>
         <Badge variant="model">{model}</Badge>
       </div>

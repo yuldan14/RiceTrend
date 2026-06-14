@@ -30,17 +30,17 @@ export function StatsRow({
   return (
     <section className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4" aria-label="Ringkasan harga">
       <StatCard
-        label="Harga Saat Ini"
+        label="Harga Terakhir"
         value={formatCurrency(currentPrice)}
-        detail="Data lokal terbaru"
+        detail="Data terbaru tersedia"
         icon={<CircleDollarSign className="h-5 w-5" aria-hidden="true" />}
         sparkline={<PriceSparkline data={sparkline} />}
         loading={loading}
       />
       <StatCard
-        label="Prediksi Besok"
+        label="Prediksi Berikutnya"
         value={formatCurrency(prediction)}
-        detail="Dibanding hari ini"
+        detail="Dibanding data terakhir"
         icon={<TrendingUp className="h-5 w-5" aria-hidden="true" />}
         trend={formatPercent(trendPercent)}
         trendVariant={trendVariant}
